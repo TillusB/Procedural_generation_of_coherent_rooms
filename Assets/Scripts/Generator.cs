@@ -3,59 +3,73 @@ using System.Collections;
 using System.Collections.Generic;
 
 public class Generator : MonoBehaviour {
-    public List<Room> Rooms;
-    public GameObject Base;
+    public List<Room> rooms;
+    public GameObject basePlane;
+    public int roomCount;
     private float height;
     private float width;
     private float x;
     private float y;
+    private int roomsCreated = 0;
+    private Room currentRoom;
 
     // Use this for initialization
     void Start () {
-        height = Base.transform.localScale.y;
-        width = Base.transform.localScale.x;
-        Test(5, Base);
+       GameObject.Instantiate(basePlane);
+        height = basePlane.transform.localScale.y*10;
+        width = basePlane.transform.localScale.x*10;
         x = -width / 2;
         y = -height / 2;
+        currentRoom = rooms[Random.Range(0,rooms.Count)];
 	}
 	
 	// Update is called once per frame
 	void Update () {
-        checkNextPos();
+        Debug.Log(x + ", " + y);
+        if (roomsCreated < roomCount)
+        {
+            checkNextPos();
+            
+        }
+        else Debug.Log("DONE");
 	}
 
 
-
-    void Test(int i, GameObject Base)
+    private void checkNextPos()
     {
-        int roomscreated = 0;
-        while(roomscreated < i)
+        Collider[] c = Physics.OverlapSphere(new Vector3(x, y, 0), 1);
+        if (c.Length > 1)
         {
-            var room = GameObject.Instantiate(Rooms[Random.Range(0, Rooms.Count - 1)]);
-            findUnoccupiedPos(room);
-            roomscreated++;
+            Debug.Log(c[0].gameObject.name);
+            incrementPos();
+            return;
+        }
+        else
+        {
+            GameObject.Instantiate(currentRoom, new Vector3(x,y,0), Quaternion.identity);
+            Debug.Log("Instantiated at " + x + ", " + y);
+            roomsCreated++;
+            currentRoom = rooms[Random.Range(0, rooms.Count)];
+            x = -width / 2;
+            y = -height / 2;
+            return;
         }
     }
-
-
-    private void findUnoccupiedPos(Room toBePlaced)
+    
+    private void incrementPos()
     {
-        toBePlaced.gameObject.transform.position = new Vector3(-width / 2, -height / 2, 0);
-        for(float y = -height/2; y <= height/2; y++)
+        if (x < width)
         {
-            for(float x = -width/2; x <= width/2; x++)
-            {
-
-                Debug.DrawLine(Vector3.zero, toBePlaced.transform.position);
-                toBePlaced.transform.position = new Vector3(x, y, 0);
-                if (toBePlaced.free)
-                {
-                    return;
-                }
-                else continue;
-            }
+            x++;
         }
-
-        if (!toBePlaced.free) Destroy(toBePlaced.gameObject);
+        else
+        {
+            x = -width / 2;
+            if (y < height)
+            {
+                y++;
+            }
+            else Debug.LogError("No free space found!");
+        }
     }
 }

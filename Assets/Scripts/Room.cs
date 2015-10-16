@@ -11,4 +11,10 @@ public class Room : MonoBehaviour {
 	void Update () {
 	
 	}
+
+    void OnCollisionEnter(Collision collision)
+    {
+        Debug.Log("HIT: " + collision.gameObject.name);
+    }
+
 }

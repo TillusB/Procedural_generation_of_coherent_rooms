@@ -2,7 +2,6 @@
 using System.Collections;
 
 public class Room : MonoBehaviour {
-    public bool free = false;
 	// Use this for initialization
 	void Start () {
 	}
@@ -11,10 +10,4 @@ public class Room : MonoBehaviour {
 	void Update () {
 	
 	}
-
-    void OnCollisionEnter(Collision collision)
-    {
-        Debug.Log("HIT: " + collision.gameObject.name);
-    }
-
 }

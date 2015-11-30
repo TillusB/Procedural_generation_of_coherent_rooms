@@ -15,16 +15,21 @@ public class Generator : MonoBehaviour {
 
     // Use this for initialization
     void Start () {
+<<<<<<< HEAD
        GameObject.Instantiate(basePlane);
         height = basePlane.transform.localScale.y*10;
         width = basePlane.transform.localScale.x*10;
         x = -width / 2;
         y = -height / 2;
         currentRoom = rooms[Random.Range(0,rooms.Count)];
+=======
+
+>>>>>>> oldstate
 	}
 	
 	// Update is called once per frame
 	void Update () {
+<<<<<<< HEAD
         Debug.Log(x + ", " + y);
         if (roomsCreated < roomCount)
         {
@@ -32,6 +37,9 @@ public class Generator : MonoBehaviour {
             
         }
         else Debug.Log("DONE");
+=======
+
+>>>>>>> oldstate
 	}
 
 

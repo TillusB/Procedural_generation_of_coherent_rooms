@@ -2,7 +2,6 @@
 using System.Collections;
 
 public class Room : MonoBehaviour {
-    public bool free = false;
 	// Use this for initialization
 	void Start () {
 	}

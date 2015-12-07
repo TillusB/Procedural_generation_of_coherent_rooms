@@ -14,7 +14,7 @@ public class Room : MonoBehaviour {
     public System.Collections.Generic.List<Room> neighbours = new System.Collections.Generic.List<Room>();
 
     void Start () {
-        transform.parent = GameObject.Find("Rooms").transform;
+        transform.parent = GameObject.Find("Rooms").transform; // Root Object um alle Collider einzublenden
         gameObject.AddComponent<MeshRenderer>();
         gameObject.AddComponent<BoxCollider>();
         gameObject.transform.position = position;

@@ -16,7 +16,7 @@ public class Generator : MonoBehaviour {
 	void Update () {
 
 	}
-
+    // Neuen Raum erzeugen: Leeres GO anlegen & Room anhängen. Room Attribute setzen.
     public Room CreateRoom(Vector3 size, Vector3 pos)
     {
         defaultRoom = new GameObject();

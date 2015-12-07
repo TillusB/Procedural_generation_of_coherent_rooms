@@ -1,6 +1,10 @@
 ﻿using UnityEngine;
 using System.Collections;
 
+/// <summary>
+/// Room objects contain all information about a room.
+/// Bound, position, collider (,renderer?), doors and neighbours.
+/// </summary>
 public class Room : MonoBehaviour {
 
     private System.Collections.Generic.Dictionary<string, int> roomType = new System.Collections.Generic.Dictionary<string, int>() {
@@ -12,6 +16,7 @@ public class Room : MonoBehaviour {
     public Vector3 size = new Vector3 (1,1,1);
     public Vector3 position = new Vector3 (0,0,0);
     public System.Collections.Generic.List<Room> neighbours = new System.Collections.Generic.List<Room>();
+    public System.Collections.Generic.List<Generator.Door> doors = new System.Collections.Generic.List<Generator.Door>();
 
     void Start () {
         transform.parent = GameObject.Find("Rooms").transform; // Root Object um alle Collider einzublenden
@@ -33,7 +38,7 @@ public class Room : MonoBehaviour {
         }
         else return;
     }
-
+    
     public void SetRoomType(string type)
     {
 

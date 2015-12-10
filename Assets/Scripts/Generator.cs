@@ -35,26 +35,27 @@ public class Generator : MonoBehaviour {
     //Attributes
     public System.Collections.Generic.List<Room> rooms = new System.Collections.Generic.List<Room>();
     public System.Collections.Generic.List<Door> doors = new System.Collections.Generic.List<Door>();
+    public Plane basePlane;
+
+    private RandomUtility randomUtility;
 
     //Methods
     void Start () {
-        Room room1 = CreateRoom(new Vector3(2, 2, 2), new Vector3(0, 0, 0));
-        Room room2 = CreateRoom(new Vector3(1, 1, 1), new Vector3(0, 0, -2));
-        room1.AddNeighbour(room2);
-        AddDoor(room1, room2);
-        Room room3 = CreateRoom(new Vector3(1, 1, 1), new Vector3(-2, 0, 0));
-        room1.AddNeighbour(room3);
-        AddDoor(room1, room3);
-        doors.RemoveAt(doors.Count - 1);
+        randomUtility = gameObject.AddComponent<RandomUtility>();
+        StartCoroutine(FindRandomPos());
 	}
-
+    int roomcount = 0;
     void Update () {
-        
+        if(roomcount <= 5)
+        {
+            StartCoroutine(FindRandomPos());
+            roomcount++;
+        }
 	}
     
     void OnDrawGizmos()
     {
-        Gizmos.color = Color.green;
+        Gizmos.color = Color.grey;
         foreach(Room r in rooms)
         {
             Gizmos.DrawCube(r.position, r.size);
@@ -77,6 +78,29 @@ public class Generator : MonoBehaviour {
         room.position = pos;
         rooms.Add(room);
         return room;
+    }
+
+    IEnumerator FindRandomPos()
+    {
+        // Try random pos
+        // For (as long as it doesnt work)
+        //  Wait one frame
+        //  Move if necessary
+        // repeat
+        Room newRoom = CreateRoom(randomUtility.RandomVector(1f, 5f), randomUtility.RandomVector(-10f, 10f));
+        yield return null;
+        //newRoom.transform.Translate(new Vector3(0, 10, 0));
+        //yield return null;
+        //newRoom.transform.Translate(new Vector3(0, -10, 0));
+        Vector3 direction = randomUtility.RandomDirection();
+
+        while (newRoom.collides)
+        {
+            newRoom.Push(direction);
+            yield return null;
+        }
+
+        yield return null;
     }
 
     public void AddDoor(Room FromRoom, Room ToRoom)

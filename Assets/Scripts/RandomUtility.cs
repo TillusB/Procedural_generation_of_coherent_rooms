@@ -24,13 +24,13 @@ public class RandomUtility : MonoBehaviour {
         switch (switchCase)
         {
             case 0:
-                return new Vector3(-1, 0, 0); //left
+                return new Vector3(-.1f, 0, 0); //left
             case 1:
-                return new Vector3(1, 0, 0); //right
+                return new Vector3(.1f, 0, 0); //right
             case 2:
-                return new Vector3(0, 0, -1); //down
+                return new Vector3(0, 0, -.1f); //down
             case 3:
-                return new Vector3(0, 0, 1); // up
+                return new Vector3(0, 0, .1f); // up
         }
         throw new System.Exception("Error, no direction gotten");
     }

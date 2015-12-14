@@ -6,8 +6,8 @@ using System.Collections;
 /// Bound, position, collider (,renderer?), doors and neighbours.
 /// </summary>
 public class Room : MonoBehaviour {
-
     //Attributes
+    private RandomUtility r;
     public Vector3 size = new Vector3 (1,1,1);
     public Vector3 position = new Vector3 (0,0,0);
     public System.Collections.Generic.List<Room> neighbours = new System.Collections.Generic.List<Room>();
@@ -16,6 +16,7 @@ public class Room : MonoBehaviour {
 
     //Methods
     void Start () {
+        r = gameObject.AddComponent<RandomUtility>();
         transform.parent = GameObject.Find("Rooms").transform; // Root Object um alle Collider einzublenden
         gameObject.AddComponent<MeshRenderer>();
         gameObject.AddComponent<BoxCollider>();
@@ -27,7 +28,10 @@ public class Room : MonoBehaviour {
     }
 
     void Update () {
-
+        if (collides)
+        {
+            Push(r.RandomDirection());
+        }
 	}
 
     void OnDrawGizmos()

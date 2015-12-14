@@ -44,10 +44,11 @@ public class Generator : MonoBehaviour {
         randomUtility = gameObject.AddComponent<RandomUtility>();
     }
     bool x = false;
+
     void Update () {
         if (!x)
         {
-            StartCoroutine(CreateRooms(500));
+            StartCoroutine(CreateRooms(6));
             x = true;
         }
     }
@@ -73,6 +74,7 @@ public class Generator : MonoBehaviour {
         rooms.Add(room);
         return room;
     }
+
     IEnumerator CreateRooms(int amount)
     {
         int roomsCreated = 0;
@@ -95,14 +97,7 @@ public class Generator : MonoBehaviour {
         Room newRoom = CreateRoom(randomUtility.RandomVector(1f, 5f), randomUtility.RandomVector(-10f, 10f));
         yield return null;
         newRoom.transform.position.Set(newRoom.position.x, 10, newRoom.position.z);
-        Vector3 direction = randomUtility.RandomDirection();
 
-        while (newRoom.collides)
-        {
-            newRoom.Push(direction);
-            Debug.Log("push");
-            yield return null;
-        }
         yield return null;
     }
 

@@ -25,7 +25,6 @@ public class RandomUtility : MonoBehaviour {
         {
             case 0:
                 return new Vector3(-1, 0, 0); //left
-                break;
             case 1:
                 return new Vector3(1, 0, 0); //right
             case 2:

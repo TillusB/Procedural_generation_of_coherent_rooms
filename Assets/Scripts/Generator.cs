@@ -42,24 +42,18 @@ public class Generator : MonoBehaviour {
     //Methods
     void Start () {
         randomUtility = gameObject.AddComponent<RandomUtility>();
-        StartCoroutine(FindRandomPos());
-	}
-    int roomcount = 0;
+    }
+    bool x = false;
     void Update () {
-        if(roomcount <= 5)
+        if (!x)
         {
-            StartCoroutine(FindRandomPos());
-            roomcount++;
+            StartCoroutine(CreateRooms(500));
+            x = true;
         }
-	}
+    }
     
     void OnDrawGizmos()
     {
-        Gizmos.color = Color.grey;
-        foreach(Room r in rooms)
-        {
-            Gizmos.DrawCube(r.position, r.size);
-        }
         Gizmos.color = Color.red;
         foreach (Door d in doors)
         {
@@ -79,27 +73,36 @@ public class Generator : MonoBehaviour {
         rooms.Add(room);
         return room;
     }
+    IEnumerator CreateRooms(int amount)
+    {
+        int roomsCreated = 0;
+        while(roomsCreated < amount)
+        {
+            StartCoroutine(FindRandomPos());
+            yield return new WaitForSeconds(.2f);
+            roomsCreated++;
+        }
+        yield return null;
+    }
 
     IEnumerator FindRandomPos()
     {
         // Try random pos
-        // For (as long as it doesnt work)
+        // For (as long as it doesnt work):
         //  Wait one frame
         //  Move if necessary
         // repeat
         Room newRoom = CreateRoom(randomUtility.RandomVector(1f, 5f), randomUtility.RandomVector(-10f, 10f));
         yield return null;
-        //newRoom.transform.Translate(new Vector3(0, 10, 0));
-        //yield return null;
-        //newRoom.transform.Translate(new Vector3(0, -10, 0));
+        newRoom.transform.position.Set(newRoom.position.x, 10, newRoom.position.z);
         Vector3 direction = randomUtility.RandomDirection();
 
         while (newRoom.collides)
         {
             newRoom.Push(direction);
+            Debug.Log("push");
             yield return null;
         }
-
         yield return null;
     }
 

@@ -20,23 +20,31 @@ public class Room : MonoBehaviour {
         gameObject.AddComponent<MeshRenderer>();
         gameObject.AddComponent<BoxCollider>();
         Rigidbody rb = gameObject.AddComponent<Rigidbody>();
-        rb.isKinematic = true;
         gameObject.transform.position = position;
         gameObject.transform.localScale = size;
+        gameObject.GetComponent<BoxCollider>().isTrigger = true;
+        rb.isKinematic = true;
     }
 
     void Update () {
+
 	}
 
-    void OnCollisionEnter(Collision coll)
+    void OnDrawGizmos()
+    {
+        Gizmos.color = Color.blue;
+        Gizmos.DrawCube(transform.position, size);
+    }
+
+    void OnTriggerEnter(Collider other)
     {
         collides = true;
-        print("problem");
+        Debug.Log("fuckit");
     }
-    void OnCollisionExit(Collision coll)
+    void OnTriggerExit(Collider other)
     {
         collides = false;
-        print("solved");
+        Debug.Log("getfukd");
     }
 
     public void AddNeighbour(Room newNeighbour)
@@ -51,7 +59,7 @@ public class Room : MonoBehaviour {
 
     public void Push(Vector3 direction)
     {
-        transform.Translate(direction);
+        transform.position += direction;
     }
 
     public void SetRoomType(string type)

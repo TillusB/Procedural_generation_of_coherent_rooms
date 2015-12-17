@@ -43,12 +43,10 @@ public class Room : MonoBehaviour {
     void OnTriggerEnter(Collider other)
     {
         collides = true;
-        Debug.Log("fuckit");
     }
     void OnTriggerExit(Collider other)
     {
         collides = false;
-        Debug.Log("getfukd");
     }
 
     public void AddNeighbour(Room newNeighbour)

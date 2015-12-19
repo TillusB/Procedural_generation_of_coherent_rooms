@@ -35,6 +35,7 @@ public class Generator : MonoBehaviour {
     //Attributes
     public System.Collections.Generic.List<Room> rooms = new System.Collections.Generic.List<Room>();
     public System.Collections.Generic.List<Door> doors = new System.Collections.Generic.List<Door>();
+    public int amountOfRooms = 0;
     public Plane basePlane;
 
     private RandomUtility randomUtility;
@@ -42,15 +43,10 @@ public class Generator : MonoBehaviour {
     //Methods
     void Start () {
         randomUtility = gameObject.AddComponent<RandomUtility>();
+            StartCoroutine(CreateRooms(amountOfRooms));
     }
-    bool x = false;
 
     void Update () {
-        if (!x)
-        {
-            StartCoroutine(CreateRooms(6));
-            x = true;
-        }
     }
     
     void OnDrawGizmos()
@@ -80,24 +76,16 @@ public class Generator : MonoBehaviour {
         int roomsCreated = 0;
         while(roomsCreated < amount)
         {
-            StartCoroutine(FindRandomPos());
-            yield return new WaitForSeconds(.2f);
+            Room newRoom = CreateRoom(randomUtility.RandomVector(1f, 5f), randomUtility.RandomVector(-10f, 10f));
+            Vector3 direction = randomUtility.RandomDirection();
+            yield return new WaitForSeconds(.01f);
+            while (newRoom.collides)
+            {
+                newRoom.Push(direction);
+                yield return null;
+            }
             roomsCreated++;
         }
-        yield return null;
-    }
-
-    IEnumerator FindRandomPos()
-    {
-        // Try random pos
-        // For (as long as it doesnt work):
-        //  Wait one frame
-        //  Move if necessary
-        // repeat
-        Room newRoom = CreateRoom(randomUtility.RandomVector(1f, 5f), randomUtility.RandomVector(-10f, 10f));
-        yield return null;
-        newRoom.transform.position.Set(newRoom.position.x, 10, newRoom.position.z);
-
         yield return null;
     }
 

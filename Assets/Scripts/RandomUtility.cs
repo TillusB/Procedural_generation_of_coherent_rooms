@@ -12,13 +12,21 @@ public class RandomUtility : MonoBehaviour {
 	void Update () {
 	
 	}
-
+    /// <summary>
+    /// Returns a random position within given minimum and maximum.
+    /// </summary>
+    /// <param name="min">Minimum value</param>
+    /// <param name="max">Maximum value</param>
+    /// <returns>Vector3</returns>
     public Vector3 RandomVector(float min, float max)
     {
         return new Vector3(Random.Range(min, max), 1, Random.Range(min, max));
     }
-
-    public Vector3 RandomDirection()
+    /// <summary>
+    /// Retruns right, left, up, down randomly.
+    /// </summary>
+    /// <returns>Vector3</returns>
+    public Vector3 RandomDirectionLRUD()
     {
         int switchCase = (int)Random.Range((int)0f, (int)4f);
         switch (switchCase)

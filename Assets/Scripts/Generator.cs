@@ -14,13 +14,19 @@ public class Generator : MonoBehaviour {
     /// </summary>
     public class Door : Object{
         private Room[] connection = new Room[2];
-
+        /// <summary>
+        /// Constructor for a Door.
+        /// </summary>
+        /// <param name="room1">First room of this connection</param>
+        /// <param name="room2">Second room of this connection</param>
         public Door(Room room1, Room room2)
         {
             connection[0] = room1;
             connection[1] = room2;
         }
-
+        /// <summary>
+        /// Re´move this Door Object permanently.
+        /// </summary>
         public void Destroy()
         {
             Object.Destroy(this);
@@ -43,7 +49,7 @@ public class Generator : MonoBehaviour {
     //Methods
     void Start () {
         randomUtility = gameObject.AddComponent<RandomUtility>();
-            StartCoroutine(CreateRooms(amountOfRooms));
+        StartCoroutine(CreateRooms(amountOfRooms));
     }
 
     void Update () {
@@ -58,7 +64,12 @@ public class Generator : MonoBehaviour {
         }
     }
 
-    // Neuen Raum erzeugen: Leeres GO anlegen & Room anhängen. Room Attribute setzen.
+    /// <summary>
+    /// Creates one room with given position vector and size vector.
+    /// </summary>
+    /// <param name="size">Defines the size of a room</param>
+    /// <param name="pos">Defines the position of a room</param>
+    /// <returns>Room</returns>
     public Room CreateRoom(Vector3 size, Vector3 pos)
     {
         GameObject defaultRoom = new GameObject();
@@ -70,14 +81,19 @@ public class Generator : MonoBehaviour {
         rooms.Add(room);
         return room;
     }
-
+    /// <summary>
+    /// Creates set amount of rooms of random sizes and positions.
+    /// When rooms intersect (Room.collides) calls Room.Push(awayFromCollidingObject) until colliders dont intersect anymore.
+    /// </summary>
+    /// <param name="amount">Count of desired rooms</param>
+    /// <returns>null</returns>
     IEnumerator CreateRooms(int amount)
     {
         int roomsCreated = 0;
         while(roomsCreated < amount)
         {
             Room newRoom = CreateRoom(randomUtility.RandomVector(1f, 5f), randomUtility.RandomVector(-10f, 10f));
-            Vector3 direction = randomUtility.RandomDirection();
+            Vector3 direction = randomUtility.RandomDirectionLRUD();
             yield return new WaitForSeconds(.01f);
             while (newRoom.collides)
             {
@@ -88,7 +104,12 @@ public class Generator : MonoBehaviour {
         }
         yield return null;
     }
-
+    /// <summary>
+    /// Adds a logical connection (Door) between two rooms as long as they are defined as each others neighbours.
+    /// Throws System.Exception.
+    /// </summary>
+    /// <param name="FromRoom">First room of desired connection</param>
+    /// <param name="ToRoom">second room of desired connection</param>
     public void AddDoor(Room FromRoom, Room ToRoom)
     {
         if (FromRoom.neighbours.Contains(ToRoom))
@@ -102,6 +123,16 @@ public class Generator : MonoBehaviour {
         {
             throw new System.Exception("ERROR: Trying to add door between non-adjacent rooms!");
         }
+    }
+    /// <summary>
+    /// Returns a normalised Vector3 that is opposite to the vector between the two given positions.
+    /// </summary>
+    /// <param name="pos">Position of the object that should move away</param>
+    /// <param name="otherPos">Position of the object it should move away from</param>
+    /// <returns>Vector3</returns>
+    private Vector3 GetDirectionAwayFrom(Vector3 pos, Vector3 otherPos)
+    {
+        return (otherPos - pos).normalized;
     }
 
 }

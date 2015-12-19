@@ -50,7 +50,11 @@ public class Room : MonoBehaviour {
     {
         collides = true;
     }
-
+    /// <summary>
+    /// Adds a room to this rooms neighbours array.
+    /// Conditionally recursive.
+    /// </summary>
+    /// <param name="newNeighbour">Room that should be added as a neighbour of this Room</param>
     public void AddNeighbour(Room newNeighbour)
     {
         neighbours.Add(newNeighbour);
@@ -60,12 +64,19 @@ public class Room : MonoBehaviour {
         }
         else return;
     }
-
+    /// <summary>
+    /// Move this Room into given direction.
+    /// Normalises direction Vector3 to make sure the room wont jump.
+    /// </summary>
+    /// <param name="direction">Vector3 that points in the direction this Room should move in</param>
     public void Push(Vector3 direction)
     {
-        transform.position += direction;
+        transform.position += direction.normalized;
     }
-
+    /// <summary>
+    /// TODO: Set this Rooms type (public/private/open/???)
+    /// </summary>
+    /// <param name="type">TODO: Type of this Room</param>
     public void SetRoomType(string type)
     {
 

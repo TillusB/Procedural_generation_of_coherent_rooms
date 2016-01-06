@@ -7,7 +7,6 @@ using System.Collections.Generic;
 /// It creates rooms in empty spaces, moves them together and decides where to put doors.
 /// </summary>
 public class Generator : MonoBehaviour {
-
     /// <summary>
     /// Doors are used to logically connect two adjacent rooms.
     /// They are basically tuples containing nothing but two rooms.
@@ -93,15 +92,15 @@ public class Generator : MonoBehaviour {
         while(roomsCreated < amount)
         {
             Room newRoom = CreateRoom(randomUtility.RandomVector(1f, 5f), randomUtility.RandomVector(-10f, 10f));
-            Vector3 direction = randomUtility.RandomDirectionLRUD();
             yield return new WaitForSeconds(.01f);
             while (newRoom.collides)
             {
-                newRoom.Push(direction);
+                newRoom.Push(GetDirectionAwayFrom(newRoom.transform.position, newRoom.otherRoom));
                 yield return null;
             }
             roomsCreated++;
         }
+        StartCoroutine(MoveAllRoomsToClear());
         yield return null;
     }
     /// <summary>
@@ -132,7 +131,33 @@ public class Generator : MonoBehaviour {
     /// <returns>Vector3</returns>
     private Vector3 GetDirectionAwayFrom(Vector3 pos, Vector3 otherPos)
     {
-        return (otherPos - pos).normalized;
+        return ((otherPos - pos)*-1).normalized;
     }
-
+    /// <summary>
+    /// Moves rooms apart after placement until no rooms collide anymore.
+    /// </summary>
+    /// <returns></returns>
+    private IEnumerator MoveAllRoomsToClear()
+    {
+        bool ready = false;
+        while (!ready)
+        {
+            foreach (Room r in rooms)
+            {
+                if (r.otherRoom != Vector3.zero)
+                {
+                    r.Push(GetDirectionAwayFrom(r.transform.position, r.otherRoom));
+                    yield return null;
+                }
+            }
+            yield return null;
+            int collisions = 0;
+            foreach(Room r in rooms) {
+                if (r.collides) collisions++;
+            }
+            Debug.Log(collisions);
+            if (collisions == 0) ready = true;
+        }
+    Debug.LogError("DONE!!");
+    }
 }

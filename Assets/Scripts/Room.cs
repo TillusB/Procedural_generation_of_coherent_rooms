@@ -22,18 +22,19 @@ public class Room : MonoBehaviour {
         gameObject.AddComponent<MeshRenderer>();
         gameObject.AddComponent<BoxCollider>();
         rb = gameObject.AddComponent<Rigidbody>();
+        rb.constraints = RigidbodyConstraints.FreezePositionY | RigidbodyConstraints.FreezeRotation;
+        gameObject.transform.position = position;
+        gameObject.transform.localScale = size;
         //gameObject.GetComponent<BoxCollider>().isTrigger = true;
         //rb.isKinematic = true;
         rb.useGravity = false;
-        rb.constraints = RigidbodyConstraints.FreezePositionY | RigidbodyConstraints.FreezeRotation;
         rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
-        gameObject.transform.position = position;
-        gameObject.transform.localScale = size;
     }
 
     void Update () {
         if (!collides) color = Color.green;
         rb.velocity = Vector3.zero;
+        transform.rotation = Quaternion.EulerAngles(Vector3.zero);
     }
 
     void OnDrawGizmos()

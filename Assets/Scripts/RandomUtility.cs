@@ -12,16 +12,23 @@ public class RandomUtility : MonoBehaviour {
 	void Update () {
 	
 	}
+
     /// <summary>
     /// Returns a random position within given minimum and maximum.
     /// </summary>
     /// <param name="min">Minimum value</param>
     /// <param name="max">Maximum value</param>
     /// <returns>Vector3</returns>
+    public Vector3 RandomVector(float minX, float maxX, float minY, float maxY)
+    {
+        return new Vector3(Random.Range(minX, maxX), 1, Random.Range(minY, maxY));
+    }
+
     public Vector3 RandomVector(float min, float max)
     {
         return new Vector3(Random.Range(min, max), 1, Random.Range(min, max));
     }
+
     /// <summary>
     /// Retruns right, left, up, down randomly.
     /// </summary>
@@ -45,7 +52,5 @@ public class RandomUtility : MonoBehaviour {
                 return new Vector3(0, 0, .1f); // up
         }
         throw new System.Exception("Error, no direction gotten");
-    }
-
-    
+    } 
 }

@@ -53,8 +53,8 @@ public class Generator : MonoBehaviour {
     //Methods
     void Start () {
         randomUtility = gameObject.AddComponent<RandomUtility>();
-        //StartCoroutine(CreateRooms(amountOfRooms));
-        StartCoroutine(TestNTimes(50));
+        StartCoroutine(CreateRooms(amountOfRooms));
+        //StartCoroutine(TestNTimes(50));
     }
 
     void Update () {
@@ -101,6 +101,7 @@ public class Generator : MonoBehaviour {
         {
             Room newRoom = CreateRoom(randomUtility.RandomVector(minMaxRoomDimensions.x, minMaxRoomDimensions.y), 
                 randomUtility.RandomVector(minMaxWidth.x, minMaxWidth.y, minMaxHeight.x, minMaxHeight.y));
+            newRoom.gameObject.name = "Room" + roomsCreated;
             yield return null;
             Debug.Log("Room " + roomsCreated + " : " + newRoom.transform.rotation.ToString());
             while (newRoom.collides)
@@ -113,7 +114,7 @@ public class Generator : MonoBehaviour {
         StartCoroutine(MoveAllRoomsToClear());
         yield return null;
     }
-
+    private bool emergencyBreak = false;
     /// <summary>
     /// Moves rooms apart after placement until no rooms collide anymore.
     /// </summary>
@@ -121,25 +122,67 @@ public class Generator : MonoBehaviour {
     private IEnumerator MoveAllRoomsToClear()
     {
         bool ready = false;
-        while (!ready)
+        if (!ready)
         {
+            SetRoomsTrigger(false);
             foreach (Room r in rooms)
             {
-                if (r.otherRoom != Vector3.zero)
+                while (r.collides)
                 {
                     r.Push(GetDirectionAwayFrom(r.transform.position, r.otherRoom));
                     yield return null;
                 }
             }
-            yield return null;
-            int collisions = 0;
-            foreach(Room r in rooms) {
-                if (r.collides) collisions++;
+
+            if (!AnyRoomCollision())
+            {
+                ready = true;
             }
-            if (collisions == 0) ready = true;
+
+            yield return null;
+
+            SetRoomsTrigger(true);
+            if (!AnyRoomCollision())
+            {
+                ready = true;
+                Debug.Log("No Collisionswhatsoever");
+            }
+            else
+            {
+                ready = false;
+                while (AnyRoomCollision())
+                {
+                    foreach(Room r in rooms)
+                    {
+                        while (r.collides)
+                        {
+                            r.Push(GetDirectionAwayFrom(r.transform.position, r.otherRoom));
+                            yield return null;
+                        }
+                    }
+                }
+            }
+            if (emergencyBreak) Debug.Break();
+        }
+        generating = false;
+        SetRoomsTrigger(false);
+        Debug.Log("YAY");
+        //StartCoroutine(PushRoomsToCenter());
+    }
+
+    private IEnumerator PushRoomsToCenter()
+    {
+        foreach(Room r in rooms)
+        {
+            while (!r.collides)
+            {
+                r.Push(-GetDirectionAwayFrom(r.transform.position, Vector3.zero));
+                yield return null;
+            }
+            yield return null;
         }
         Debug.Log("Done");
-        generating = false;
+        yield return null;
     }
 
     /// <summary>
@@ -197,4 +240,21 @@ public class Generator : MonoBehaviour {
         return ((otherPos - pos) * -1).normalized;
     }
 
+    private void SetRoomsTrigger(bool b)
+    {
+        foreach (Room r in rooms)
+        {
+            r.GetComponent<BoxCollider>().isTrigger = b;
+        }
+    }
+
+    private bool AnyRoomCollision()
+    {
+        bool result = true;
+        foreach(Room r in rooms)
+        {
+            if (r.collides) result = false;
+        }
+        return result;
+    }
 }

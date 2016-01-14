@@ -43,7 +43,7 @@ public class Room : MonoBehaviour {
         Gizmos.DrawCube(transform.position, size);
     }
 
-    /*void OnTriggerEnter(Collider other)
+    void OnTriggerEnter(Collider other)
     {
         color = Color.red;
         if (otherRoom == Vector3.zero)
@@ -52,12 +52,14 @@ public class Room : MonoBehaviour {
         }
         collides = true;
     }
+
     void OnTriggerExit(Collider other)
     {
         color = Color.green;
         otherRoom = Vector3.zero;
         collides = false;
     }
+
     void OnTriggerstay(Collider other)
     {
         color = Color.red;
@@ -66,10 +68,10 @@ public class Room : MonoBehaviour {
             otherRoom = other.transform.position;
         }
         collides = true;
-    }*/
+    }
+
     void OnCollisionEnter(Collision other)
     {
-
         color = Color.red;
         if(otherRoom == Vector3.zero)
         {
@@ -84,6 +86,7 @@ public class Room : MonoBehaviour {
         otherRoom = Vector3.zero;
         collides = false;
     }
+
     void OnCollisionstay(Collision other)
     {
         color = Color.red;
@@ -116,7 +119,7 @@ public class Room : MonoBehaviour {
     public void Push(Vector3 direction)
     {
         color = Color.yellow;
-        transform.position += direction.normalized/100;
+        transform.Translate(direction);
     }
     /// <summary>
     /// TODO: Set this Rooms type (public/private/open/???)

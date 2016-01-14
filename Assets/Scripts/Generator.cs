@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEditor;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -41,14 +42,19 @@ public class Generator : MonoBehaviour {
     public System.Collections.Generic.List<Room> rooms = new System.Collections.Generic.List<Room>();
     public System.Collections.Generic.List<Door> doors = new System.Collections.Generic.List<Door>();
     public int amountOfRooms = 0;
+    public Vector2 minMaxRoomDimensions = Vector2.zero;
+    public Vector2 minMaxWidth = Vector2.zero;
+    public Vector2 minMaxHeight = Vector2.zero;
     public Plane basePlane;
 
+    private bool generating = false;
     private RandomUtility randomUtility;
 
     //Methods
     void Start () {
         randomUtility = gameObject.AddComponent<RandomUtility>();
-        StartCoroutine(CreateRooms(amountOfRooms));
+        //StartCoroutine(CreateRooms(amountOfRooms));
+        StartCoroutine(TestNTimes(50));
     }
 
     void Update () {
@@ -80,6 +86,7 @@ public class Generator : MonoBehaviour {
         rooms.Add(room);
         return room;
     }
+
     /// <summary>
     /// Creates set amount of rooms of random sizes and positions.
     /// When rooms intersect (Room.collides) calls Room.Push(awayFromCollidingObject) until colliders dont intersect anymore.
@@ -88,11 +95,14 @@ public class Generator : MonoBehaviour {
     /// <returns>null</returns>
     IEnumerator CreateRooms(int amount)
     {
+        generating = true;
         int roomsCreated = 0;
         while(roomsCreated < amount)
         {
-            Room newRoom = CreateRoom(randomUtility.RandomVector(1f, 5f), randomUtility.RandomVector(-10f, 10f));
-            yield return new WaitForSeconds(.01f);
+            Room newRoom = CreateRoom(randomUtility.RandomVector(minMaxRoomDimensions.x, minMaxRoomDimensions.y), 
+                randomUtility.RandomVector(minMaxWidth.x, minMaxWidth.y, minMaxHeight.x, minMaxHeight.y));
+            yield return null;
+            Debug.Log("Room " + roomsCreated + " : " + newRoom.transform.rotation.ToString());
             while (newRoom.collides)
             {
                 newRoom.Push(GetDirectionAwayFrom(newRoom.transform.position, newRoom.otherRoom));
@@ -103,36 +113,7 @@ public class Generator : MonoBehaviour {
         StartCoroutine(MoveAllRoomsToClear());
         yield return null;
     }
-    /// <summary>
-    /// Adds a logical connection (Door) between two rooms as long as they are defined as each others neighbours.
-    /// Throws System.Exception.
-    /// </summary>
-    /// <param name="FromRoom">First room of desired connection</param>
-    /// <param name="ToRoom">second room of desired connection</param>
-    public void AddDoor(Room FromRoom, Room ToRoom)
-    {
-        if (FromRoom.neighbours.Contains(ToRoom))
-        {
-            Door door = new Door(FromRoom, ToRoom);
-            doors.Add(door);
-            FromRoom.doors.Add(doors[doors.Count-1]);
-            ToRoom.doors.Add(doors[doors.Count-1]);
-        }
-        else
-        {
-            throw new System.Exception("ERROR: Trying to add door between non-adjacent rooms!");
-        }
-    }
-    /// <summary>
-    /// Returns a normalised Vector3 that is opposite to the vector between the two given positions.
-    /// </summary>
-    /// <param name="pos">Position of the object that should move away</param>
-    /// <param name="otherPos">Position of the object it should move away from</param>
-    /// <returns>Vector3</returns>
-    private Vector3 GetDirectionAwayFrom(Vector3 pos, Vector3 otherPos)
-    {
-        return ((otherPos - pos)*-1).normalized;
-    }
+
     /// <summary>
     /// Moves rooms apart after placement until no rooms collide anymore.
     /// </summary>
@@ -155,9 +136,65 @@ public class Generator : MonoBehaviour {
             foreach(Room r in rooms) {
                 if (r.collides) collisions++;
             }
-            Debug.Log(collisions);
             if (collisions == 0) ready = true;
         }
-    Debug.LogError("DONE!!");
+        Debug.Log("Done");
+        generating = false;
     }
+
+    /// <summary>
+    /// Creates n levels and saves them as prefabs.
+    /// </summary>
+    /// <param name="n">Amount of testruns</param>
+    IEnumerator TestNTimes(int n)
+    {
+        for(int i = 0; i < n; i++)
+        {
+            StartCoroutine(CreateRooms(amountOfRooms));
+            GameObject test = GameObject.Find("Rooms");
+            while (generating)
+            {
+                yield return null;
+            }
+            PrefabUtility.CreatePrefab("Assets/Prefabs/" + test.name + i + ".prefab", test, ReplacePrefabOptions.Default);
+            Debug.Log("Saved!");
+            foreach(Transform child in test.GetComponentInChildren<Transform>())
+            {
+                Destroy(child.gameObject);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Adds a logical connection (Door) between two rooms as long as they are defined as each others neighbours.
+    /// Throws System.Exception.
+    /// </summary>
+    /// <param name="FromRoom">First room of desired connection</param>
+    /// <param name="ToRoom">second room of desired connection</param>
+    public void AddDoor(Room FromRoom, Room ToRoom)
+    {
+        if (FromRoom.neighbours.Contains(ToRoom))
+        {
+            Door door = new Door(FromRoom, ToRoom);
+            doors.Add(door);
+            FromRoom.doors.Add(doors[doors.Count - 1]);
+            ToRoom.doors.Add(doors[doors.Count - 1]);
+        }
+        else
+        {
+            throw new System.Exception("ERROR: Trying to add door between non-adjacent rooms!");
+        }
+    }
+
+    /// <summary>
+    /// Returns a normalised Vector3 that is opposite to the vector between the two given positions.
+    /// </summary>
+    /// <param name="pos">Position of the object that should move away</param>
+    /// <param name="otherPos">Position of the object it should move away from</param>
+    /// <returns>Vector3</returns>
+    private Vector3 GetDirectionAwayFrom(Vector3 pos, Vector3 otherPos)
+    {
+        return ((otherPos - pos) * -1).normalized;
+    }
+
 }

@@ -34,7 +34,7 @@ public class Room : MonoBehaviour {
     void Update () {
         if (!collides) color = Color.green;
         rb.velocity = Vector3.zero;
-        transform.rotation = Quaternion.EulerAngles(Vector3.zero);
+        transform.rotation = Quaternion.Euler(Vector3.zero);
     }
 
     void OnDrawGizmos()

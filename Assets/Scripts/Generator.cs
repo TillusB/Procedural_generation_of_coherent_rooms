@@ -107,6 +107,7 @@ public class Generator : MonoBehaviour {
             while (newRoom.collides)
             {
                 newRoom.Push(GetDirectionAwayFrom(newRoom.transform.position, newRoom.otherRoom));
+                Debug.Log("CreateRooms Push: " + newRoom.name + " collides with " + newRoom.otherRoom.ToString());
                 yield return null;
             }
             roomsCreated++;
@@ -122,9 +123,9 @@ public class Generator : MonoBehaviour {
     private IEnumerator MoveAllRoomsToClear()
     {
         bool ready = false;
-        if (!ready)
+         SetRoomsTrigger(false);
+        while (!ready)
         {
-            SetRoomsTrigger(false);
             foreach (Room r in rooms)
             {
                 while (r.collides)
@@ -134,27 +135,35 @@ public class Generator : MonoBehaviour {
                 }
             }
 
-            if (!AnyRoomCollision())
+            yield return null;
+
+            if (CollidingRooms().Length == 0)
             {
                 ready = true;
             }
+
+            SetRoomsTrigger(true);
 
             yield return null;
 
-            SetRoomsTrigger(true);
-            if (!AnyRoomCollision())
+            if (CollidingRooms().Length == 0)
             {
                 ready = true;
-                Debug.Log("No Collisionswhatsoever");
+                Debug.Log("No Collisionswhatsoever" + CollidingRooms().Length);
             }
+            /*else
+            {
+                ready = false;
+            }*/
             else
             {
                 ready = false;
-                while (AnyRoomCollision())
+                while (CollidingRooms().Length > 0)
                 {
-                    foreach(Room r in rooms)
+                    foreach(Room r in CollidingRooms())
                     {
-                        while (r.collides)
+                        r.collides = true;
+                        if (r.collides)
                         {
                             r.Push(GetDirectionAwayFrom(r.transform.position, r.otherRoom));
                             yield return null;
@@ -247,14 +256,20 @@ public class Generator : MonoBehaviour {
             r.GetComponent<BoxCollider>().isTrigger = b;
         }
     }
-
-    private bool AnyRoomCollision()
+    /// <summary>
+    /// Array of type Room containing all currently colliding Rooms.
+    /// </summary>
+    /// <returns>Room[]</returns>
+    private Room[] CollidingRooms()
     {
-        bool result = true;
+        List<Room> result = new List<Room>();
         foreach(Room r in rooms)
         {
-            if (r.collides) result = false;
+            if (r.collides)
+            {
+                result.Add(r);
+            }
         }
-        return result;
+        return result.ToArray();
     }
 }

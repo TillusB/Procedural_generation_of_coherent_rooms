@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 /// <summary>
 /// Room objects contain all information about a room.
@@ -7,28 +8,34 @@ using System.Collections;
 /// </summary>
 public class Room : MonoBehaviour {
     //Attributes
-    public Vector3 otherRoom = Vector3.zero;
-    public Vector3 size = new Vector3 (1,1,1);
+    public Room otherRoom = null;
+    public Vector3 size = new Vector3 (10,10,10);
     public Vector3 position = new Vector3 (0,0,0);
     public System.Collections.Generic.List<Room> neighbours = new System.Collections.Generic.List<Room>();
     public System.Collections.Generic.List<Generator.Door> doors = new System.Collections.Generic.List<Generator.Door>();
     public bool collides = false;
     private Color color;
     public Rigidbody rb;
+    private Dictionary<string, int> roomTypes = new Dictionary<string, int>();
+    public int type = 0;
 
     //Methods
     void Start () {
+        roomTypes.Add("undefined", 0);
+        roomTypes.Add("public", 1);
+        roomTypes.Add("private", 2);
+        
         transform.parent = GameObject.Find("Rooms").transform; // Root Object um alle Collider einzublenden
         gameObject.AddComponent<MeshRenderer>();
         gameObject.AddComponent<BoxCollider>();
         rb = gameObject.AddComponent<Rigidbody>();
+        rb.mass = 0;
         rb.constraints = RigidbodyConstraints.FreezePositionY | RigidbodyConstraints.FreezeRotation;
         gameObject.transform.position = position;
         gameObject.transform.localScale = size;
         //gameObject.GetComponent<BoxCollider>().isTrigger = true;
-        //rb.isKinematic = true;
         rb.useGravity = false;
-        rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
+        rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
     }
 
     void Update () {
@@ -46,9 +53,10 @@ public class Room : MonoBehaviour {
     void OnTriggerEnter(Collider other)
     {
         color = Color.red;
-        if (otherRoom == Vector3.zero)
+        if (otherRoom == null)
         {
-            otherRoom = other.transform.position;
+            otherRoom = other.gameObject.GetComponent<Room>();
+            neighbours.Add(otherRoom);
         }
         collides = true;
     }
@@ -56,16 +64,17 @@ public class Room : MonoBehaviour {
     void OnTriggerExit(Collider other)
     {
         color = Color.green;
-        otherRoom = Vector3.zero;
+        neighbours.Remove(other.gameObject.GetComponent<Room>());
+        otherRoom = null;
         collides = false;
     }
 
     void OnTriggerstay(Collider other)
     {
         color = Color.red;
-        if (otherRoom == Vector3.zero)
+        if (otherRoom == null)
         {
-            otherRoom = other.transform.position;
+            otherRoom = other.gameObject.GetComponent<Room>();
         }
         collides = true;
     }
@@ -73,9 +82,11 @@ public class Room : MonoBehaviour {
     void OnCollisionEnter(Collision other)
     {
         color = Color.red;
-        if(otherRoom == Vector3.zero)
+        if(otherRoom == null)
         {
-            otherRoom = other.gameObject.transform.position;
+            otherRoom = other.gameObject.GetComponent<Room>();
+            neighbours.Add(otherRoom);
+
         }
         collides = true;
     }
@@ -83,16 +94,18 @@ public class Room : MonoBehaviour {
     void OnCollisionExit(Collision other)
     {
         color = Color.green;
-        otherRoom = Vector3.zero;
+        neighbours.Remove(other.gameObject.GetComponent<Room>());
+
+        otherRoom = null;
         collides = false;
     }
 
     void OnCollisionstay(Collision other)
     {
         color = Color.red;
-        if (otherRoom == Vector3.zero)
+        if (otherRoom == null)
         {
-            otherRoom = other.transform.position;
+            otherRoom = other.gameObject.GetComponent<Room>();
         }
         collides = true;
     }
@@ -125,8 +138,19 @@ public class Room : MonoBehaviour {
     /// TODO: Set this Rooms type (public/private/open/???)
     /// </summary>
     /// <param name="type">TODO: Type of this Room</param>
-    public void SetRoomType(string type)
+    public void SetRoomType(string roomtype)
     {
+        int temp;
+        if (roomTypes.TryGetValue(roomtype, out temp))
+        {
+            this.type = temp;
+        }
+        else this.type = roomTypes["undefined"];
+    }
 
+    public bool CollidesWith(Room r)
+    {
+        if (otherRoom == r) return true;
+        return false;
     }
 }

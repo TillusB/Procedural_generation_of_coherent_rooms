@@ -2,6 +2,7 @@
 using UnityEditor;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 /// <summary>
 /// The Generator is the heart of the program.
@@ -34,7 +35,7 @@ public class Generator : MonoBehaviour {
 
         public void DrawLine()
         {
-            Gizmos.DrawLine(connection[0].position, connection[1].position);
+            Gizmos.DrawLine(connection[0].transform.position, connection[1].transform.position);
         }
     }
 
@@ -106,7 +107,7 @@ public class Generator : MonoBehaviour {
             Debug.Log("Room " + roomsCreated + " : " + newRoom.transform.rotation.ToString());
             while (newRoom.collides)
             {
-                newRoom.Push(GetDirectionAwayFrom(newRoom.transform.position, newRoom.otherRoom));
+                newRoom.Push(GetDirectionAwayFrom(newRoom.transform.position, newRoom.otherRoom.transform.position));
                 Debug.Log("CreateRooms Push: " + newRoom.name + " collides with " + newRoom.otherRoom.ToString());
                 yield return null;
             }
@@ -115,7 +116,6 @@ public class Generator : MonoBehaviour {
         StartCoroutine(MoveAllRoomsToClear());
         yield return null;
     }
-    private bool emergencyBreak = false;
     /// <summary>
     /// Moves rooms apart after placement until no rooms collide anymore.
     /// </summary>
@@ -130,7 +130,7 @@ public class Generator : MonoBehaviour {
             {
                 while (r.collides)
                 {
-                    r.Push(GetDirectionAwayFrom(r.transform.position, r.otherRoom));
+                    r.Push(GetDirectionAwayFrom(r.transform.position, r.otherRoom.transform.position));
                     yield return null;
                 }
             }
@@ -165,33 +165,61 @@ public class Generator : MonoBehaviour {
                         r.collides = true;
                         if (r.collides)
                         {
-                            r.Push(GetDirectionAwayFrom(r.transform.position, r.otherRoom));
+                            r.Push(GetDirectionAwayFrom(r.transform.position, r.otherRoom.transform.position));
                             yield return null;
                         }
                     }
                 }
             }
-            if (emergencyBreak) Debug.Break();
         }
         generating = false;
         SetRoomsTrigger(false);
         Debug.Log("YAY");
-        //StartCoroutine(PushRoomsToCenter());
+        StartCoroutine(PushRoomsToCenter());
     }
 
+    /// <summary>
+    /// Pushes all rooms towards the center room TBI
+    /// </summary>
+    /// <returns></returns>
     private IEnumerator PushRoomsToCenter()
     {
+        while (generating)
+        {
+            yield return null;
+        }
+        Room biggest = getBiggestRoom();
+
         foreach(Room r in rooms)
         {
+            if(r == biggest)
+            {
+                continue;
+            }
+
             while (!r.collides)
             {
-                r.Push(-GetDirectionAwayFrom(r.transform.position, Vector3.zero));
+                r.Push(-GetDirectionAwayFrom(r.transform.position, biggest.transform.position));
                 yield return null;
             }
             yield return null;
         }
         Debug.Log("Done");
+
+        //TODO TEST TEST
+        foreach(Room r in rooms)
+        {
+            foreach(Room n in r.neighbours)
+            {
+                AddDoor(r, n);
+            }
+        }
         yield return null;
+    }
+
+    void OnCollisionEnter(Collision coll)
+    {
+        Debug.Log("BOOP");
     }
 
     /// <summary>
@@ -256,6 +284,7 @@ public class Generator : MonoBehaviour {
             r.GetComponent<BoxCollider>().isTrigger = b;
         }
     }
+
     /// <summary>
     /// Array of type Room containing all currently colliding Rooms.
     /// </summary>
@@ -271,5 +300,17 @@ public class Generator : MonoBehaviour {
             }
         }
         return result.ToArray();
+    }
+
+    /// <summary>
+    /// Returns the biggest room by sorting rooms by size
+    /// </summary>
+    /// <returns>Room</returns>
+    private Room getBiggestRoom()
+    {
+        List<Room> sortedRooms = rooms.OrderBy(x => (x.size.x * x.size.z)).ToList<Room>();
+        Debug.Log("smallest : " + sortedRooms[0].name);
+        Debug.Log("biggest : " + sortedRooms[sortedRooms.Count()-1]);
+        return sortedRooms.Last<Room>();
     }
 }

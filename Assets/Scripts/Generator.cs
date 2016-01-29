@@ -199,6 +199,7 @@ public class Generator : MonoBehaviour {
 
             while (!r.collides)
             {
+                
                 r.Push(-GetDirectionAwayFrom(r.transform.position, biggest.transform.position));
                 yield return null;
             }

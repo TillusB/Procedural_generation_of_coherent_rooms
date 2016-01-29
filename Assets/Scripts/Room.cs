@@ -26,7 +26,6 @@ public class Room : MonoBehaviour {
         roomTypes.Add("private", 2);
         
         transform.parent = GameObject.Find("Rooms").transform; // Root Object um alle Collider einzublenden
-        gameObject.AddComponent<MeshRenderer>();
         gameObject.AddComponent<BoxCollider>();
         rb = gameObject.AddComponent<Rigidbody>();
         rb.mass = 0;

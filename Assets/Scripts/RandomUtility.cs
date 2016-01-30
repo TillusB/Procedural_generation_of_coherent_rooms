@@ -19,14 +19,14 @@ public class RandomUtility : MonoBehaviour {
     /// <param name="min">Minimum value</param>
     /// <param name="max">Maximum value</param>
     /// <returns>Vector3</returns>
-    public Vector3 RandomVector(float minX, float maxX, float minY, float maxY)
+    public Vector3 RandomVector(int minX, int maxX, int minY, int maxY)
     {
-        return new Vector3(Random.Range(minX, maxX), 10, Random.Range(minY, maxY));
+        return new Vector3(Random.Range(minX, maxX)*4, 10, Random.Range(minY, maxY)*4);
     }
 
-    public Vector3 RandomVector(float min, float max)
+    public Vector3 RandomVector(int min, int max)
     {
-        return new Vector3(Random.Range(min, max), 10, Random.Range(min, max));
+        return new Vector3(Random.Range(min, max)*4, 10, Random.Range(min, max)*4);
     }
 
     /// <summary>

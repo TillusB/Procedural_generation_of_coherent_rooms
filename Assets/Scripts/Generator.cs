@@ -48,17 +48,20 @@ public class Generator : MonoBehaviour {
     public Vector2 minMaxHeight = Vector2.zero;
     public Plane basePlane;
 
-    private bool generating = false;
+    private bool generating = true;
+    private bool pushing = true;
     private RandomUtility randomUtility;
 
     //Methods
-    void Start () {
+    void Start ()
+    {
         randomUtility = gameObject.AddComponent<RandomUtility>();
         StartCoroutine(CreateRooms(amountOfRooms));
-        //StartCoroutine(TestNTimes(50));
+        //StartCoroutine(TestNTimes(10));
     }
 
-    void Update () {
+    void Update ()
+    {
     }
     
     void OnDrawGizmos()
@@ -100,15 +103,14 @@ public class Generator : MonoBehaviour {
         int roomsCreated = 0;
         while(roomsCreated < amount)
         {
-            Room newRoom = CreateRoom(randomUtility.RandomVector(minMaxRoomDimensions.x, minMaxRoomDimensions.y), 
-                randomUtility.RandomVector(minMaxWidth.x, minMaxWidth.y, minMaxHeight.x, minMaxHeight.y));
+            Room newRoom = CreateRoom(randomUtility.RandomVector((int)minMaxRoomDimensions.x, (int)minMaxRoomDimensions.y), 
+                randomUtility.RandomVector((int)minMaxWidth.x, (int)minMaxWidth.y, (int)minMaxHeight.x, (int)minMaxHeight.y));
             newRoom.gameObject.name = "Room" + roomsCreated;
             yield return null;
             Debug.Log("Room " + roomsCreated + " : " + newRoom.transform.rotation.ToString());
             while (newRoom.collides)
             {
                 newRoom.Push(GetDirectionAwayFrom(newRoom.transform.position, newRoom.otherRoom.transform.position));
-                Debug.Log("CreateRooms Push: " + newRoom.name + " collides with " + newRoom.otherRoom.ToString());
                 yield return null;
             }
             roomsCreated++;
@@ -123,7 +125,7 @@ public class Generator : MonoBehaviour {
     private IEnumerator MoveAllRoomsToClear()
     {
         bool ready = false;
-         SetRoomsTrigger(false);
+        //SetRoomsTrigger(false);
         while (!ready)
         {
             foreach (Room r in rooms)
@@ -155,17 +157,17 @@ public class Generator : MonoBehaviour {
             {
                 ready = false;
             }*/
-            else
+            else //Backup
             {
                 ready = false;
                 while (CollidingRooms().Length > 0)
                 {
                     foreach(Room r in CollidingRooms())
                     {
-                        r.collides = true;
                         if (r.collides)
                         {
-                            r.Push(GetDirectionAwayFrom(r.transform.position, r.otherRoom.transform.position));
+                            Debug.LogError("hello " + r.name + " has no Other = " + (r.otherRoom == null).ToString());
+                            if(r.otherRoom != null) r.Push(GetDirectionAwayFrom(r.transform.position, r.otherRoom.transform.position));
                             yield return null;
                         }
                     }
@@ -174,7 +176,7 @@ public class Generator : MonoBehaviour {
         }
         generating = false;
         SetRoomsTrigger(false);
-        Debug.Log("YAY");
+        Debug.Log("Success!");
         StartCoroutine(PushRoomsToCenter());
     }
 
@@ -184,11 +186,13 @@ public class Generator : MonoBehaviour {
     /// <returns></returns>
     private IEnumerator PushRoomsToCenter()
     {
+        pushing = true;
         while (generating)
         {
-            yield return null;
+            yield return null; //skip frame until other Coroutine is done;
         }
         Room biggest = getBiggestRoom();
+        Destroy(biggest.rb); //Biggest will not be pushed!
 
         foreach(Room r in rooms)
         {
@@ -196,16 +200,25 @@ public class Generator : MonoBehaviour {
             {
                 continue;
             }
-
-            while (!r.collides)
+            float time = Time.deltaTime; //timer to stop infinite push
+            while (true)
             {
-                
                 r.Push(-GetDirectionAwayFrom(r.transform.position, biggest.transform.position));
                 yield return null;
+                if (r.ConnectedTo(biggest))
+                {
+                    RoomsWereChecked(false);
+                    break;
+                }
+                time += Time.deltaTime;
+                if (time >= 3f)
+                {
+                    break;
+                }
             }
             yield return null;
         }
-        Debug.Log("Done");
+        //Debug.Log("Done");
 
         //TODO TEST TEST
         foreach(Room r in rooms)
@@ -216,11 +229,12 @@ public class Generator : MonoBehaviour {
             }
         }
         yield return null;
+        pushing = false;
     }
 
     void OnCollisionEnter(Collision coll)
     {
-        Debug.Log("BOOP");
+        //Debug.Log("Collision Enter");
     }
 
     /// <summary>
@@ -233,7 +247,7 @@ public class Generator : MonoBehaviour {
         {
             StartCoroutine(CreateRooms(amountOfRooms));
             GameObject test = GameObject.Find("Rooms");
-            while (generating)
+            while (generating || pushing)
             {
                 yield return null;
             }
@@ -312,6 +326,12 @@ public class Generator : MonoBehaviour {
         List<Room> sortedRooms = rooms.OrderBy(x => (x.size.x * x.size.z)).ToList<Room>();
         Debug.Log("smallest : " + sortedRooms[0].name);
         Debug.Log("biggest : " + sortedRooms[sortedRooms.Count()-1]);
-        return sortedRooms.Last<Room>();
+        return sortedRooms.Last();
+    }
+    private void RoomsWereChecked(bool wasChecked) {
+        foreach (Room r in rooms)
+        {
+            r.wasChecked = wasChecked;
+        }
     }
 }

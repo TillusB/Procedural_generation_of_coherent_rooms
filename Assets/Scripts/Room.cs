@@ -18,6 +18,9 @@ public class Room : MonoBehaviour {
     public Rigidbody rb;
     private Dictionary<string, int> roomTypes = new Dictionary<string, int>();
     public int type = 0;
+    public BoxCollider collider;
+    public BoxCollider trigger;
+    public bool wasChecked = false;
 
     //Methods
     void Start () {
@@ -26,21 +29,25 @@ public class Room : MonoBehaviour {
         roomTypes.Add("private", 2);
         
         transform.parent = GameObject.Find("Rooms").transform; // Root Object um alle Collider einzublenden
-        gameObject.AddComponent<BoxCollider>();
+        collider = gameObject.AddComponent<BoxCollider>();
+        trigger = gameObject.AddComponent<BoxCollider>();
         rb = gameObject.AddComponent<Rigidbody>();
         rb.mass = 0;
         rb.constraints = RigidbodyConstraints.FreezePositionY | RigidbodyConstraints.FreezeRotation;
         gameObject.transform.position = position;
         gameObject.transform.localScale = size;
-        //gameObject.GetComponent<BoxCollider>().isTrigger = true;
+        gameObject.transform.localScale.Set(gameObject.transform.localScale.x % 5, gameObject.transform.localScale.y, gameObject.transform.localScale.z % 5);
+        trigger.isTrigger = true;
         rb.useGravity = false;
         rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
     }
 
     void Update () {
         if (!collides) color = Color.green;
-        rb.velocity = Vector3.zero;
+        if (wasChecked) color = Color.blue;
+        if(rb != null) rb.velocity = Vector3.zero;
         transform.rotation = Quaternion.Euler(Vector3.zero);
+        gameObject.transform.position.Set(gameObject.transform.position.x - gameObject.transform.position.x%5, gameObject.transform.position.y, gameObject.transform.position.z - gameObject.transform.position.z%5);
     }
 
     void OnDrawGizmos()
@@ -52,11 +59,8 @@ public class Room : MonoBehaviour {
     void OnTriggerEnter(Collider other)
     {
         color = Color.red;
-        if (otherRoom == null)
-        {
-            otherRoom = other.gameObject.GetComponent<Room>();
-            neighbours.Add(otherRoom);
-        }
+        otherRoom = other.gameObject.GetComponent<Room>();
+        AddNeighbour(otherRoom);
         collides = true;
     }
 
@@ -71,22 +75,17 @@ public class Room : MonoBehaviour {
     void OnTriggerstay(Collider other)
     {
         color = Color.red;
-        if (otherRoom == null)
-        {
-            otherRoom = other.gameObject.GetComponent<Room>();
-        }
+        otherRoom = other.gameObject.GetComponent<Room>();
+        AddNeighbour(otherRoom);
         collides = true;
     }
 
     void OnCollisionEnter(Collision other)
     {
         color = Color.red;
-        if(otherRoom == null)
-        {
-            otherRoom = other.gameObject.GetComponent<Room>();
-            neighbours.Add(otherRoom);
 
-        }
+        otherRoom = other.gameObject.GetComponent<Room>();
+        AddNeighbour(otherRoom);
         collides = true;
     }
 
@@ -102,10 +101,9 @@ public class Room : MonoBehaviour {
     void OnCollisionstay(Collision other)
     {
         color = Color.red;
-        if (otherRoom == null)
-        {
-            otherRoom = other.gameObject.GetComponent<Room>();
-        }
+
+        otherRoom = other.gameObject.GetComponent<Room>();
+        AddNeighbour(otherRoom);
         collides = true;
     }
 
@@ -116,13 +114,17 @@ public class Room : MonoBehaviour {
     /// <param name="newNeighbour">Room that should be added as a neighbour of this Room</param>
     public void AddNeighbour(Room newNeighbour)
     {
-        neighbours.Add(newNeighbour);
+        if (!neighbours.Contains(newNeighbour))
+        {
+            neighbours.Add(newNeighbour);
+        }
         if (!newNeighbour.neighbours.Contains(this))
         {
             newNeighbour.AddNeighbour(this);
         }
         else return;
     }
+
     /// <summary>
     /// Move this Room into given direction.
     /// Normalises direction Vector3 to make sure the room wont jump.
@@ -133,6 +135,7 @@ public class Room : MonoBehaviour {
         color = Color.yellow;
         transform.Translate(direction);
     }
+
     /// <summary>
     /// TODO: Set this Rooms type (public/private/open/???)
     /// </summary>
@@ -151,5 +154,30 @@ public class Room : MonoBehaviour {
     {
         if (otherRoom == r) return true;
         return false;
+    }
+
+    public bool ConnectedTo(Room r)
+    {
+        Debug.Log("Is " + gameObject.name + " connected to " + r.name + "?");
+        wasChecked = true;
+        bool found = false;
+
+        if (neighbours.Contains(r))
+        {
+            found = true;
+            Debug.LogError("Found IT!");
+        }
+        else
+        {
+            foreach(Room currentNeighbour in neighbours)
+            {
+                if (!currentNeighbour.wasChecked)
+                {
+                    found = currentNeighbour.ConnectedTo(r);
+                }
+            }
+        }
+
+        return found;
     }
 }

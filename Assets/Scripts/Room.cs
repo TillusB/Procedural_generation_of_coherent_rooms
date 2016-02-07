@@ -16,18 +16,15 @@ public class Room : MonoBehaviour {
     public bool collides = false;
     private Color color;
     public Rigidbody rb;
-    private Dictionary<string, int> roomTypes = new Dictionary<string, int>();
-    public int type = 0;
+    public static Dictionary<string, int> roomTypes = new Dictionary<string, int>();
+    public int type;
     public BoxCollider collider;
     public BoxCollider trigger;
     public bool wasChecked = false;
 
     //Methods
     void Start () {
-        roomTypes.Add("undefined", 0);
-        roomTypes.Add("public", 1);
-        roomTypes.Add("private", 2);
-        
+        roomTypes.TryGetValue("undefined", out type);
         transform.parent = GameObject.Find("Rooms").transform; // Root Object um alle Collider einzublenden
         collider = gameObject.AddComponent<BoxCollider>();
         trigger = gameObject.AddComponent<BoxCollider>();
@@ -158,7 +155,7 @@ public class Room : MonoBehaviour {
 
     public bool ConnectedTo(Room r)
     {
-        Debug.Log("Is " + gameObject.name + " connected to " + r.name + "?");
+        //Debug.Log("Is " + gameObject.name + " connected to " + r.name + "?");
         wasChecked = true;
         bool found = false;
 
@@ -177,7 +174,8 @@ public class Room : MonoBehaviour {
                 }
             }
         }
-
+        Debug.Log(gameObject.name + " connected to " + r.name + ": " + found);
+        //Debug.Break();
         return found;
     }
 }

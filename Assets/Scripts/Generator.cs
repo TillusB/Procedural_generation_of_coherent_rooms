@@ -55,6 +55,9 @@ public class Generator : MonoBehaviour {
     //Methods
     void Start ()
     {
+        Room.roomTypes.Add("undefined", 0);
+        Room.roomTypes.Add("public", 1);
+        Room.roomTypes.Add("private", 2);
         randomUtility = gameObject.AddComponent<RandomUtility>();
         StartCoroutine(CreateRooms(amountOfRooms));
         //StartCoroutine(TestNTimes(10));
@@ -107,7 +110,7 @@ public class Generator : MonoBehaviour {
                 randomUtility.RandomVector((int)minMaxWidth.x, (int)minMaxWidth.y, (int)minMaxHeight.x, (int)minMaxHeight.y));
             newRoom.gameObject.name = "Room" + roomsCreated;
             yield return null;
-            Debug.Log("Room " + roomsCreated + " : " + newRoom.transform.rotation.ToString());
+            //Debug.Log("Room " + roomsCreated + " : " + newRoom.transform.rotation.ToString());
             while (newRoom.collides)
             {
                 newRoom.Push(GetDirectionAwayFrom(newRoom.transform.position, newRoom.otherRoom.transform.position));
@@ -115,6 +118,28 @@ public class Generator : MonoBehaviour {
             }
             roomsCreated++;
         }
+
+        List<Room> sortedRooms = getRoomsSorted();
+        int i = 0;
+
+        foreach (Room r in sortedRooms) // Larger half (floored) of all rooms should be public rooms
+        {
+            if (i > Mathf.CeilToInt(sortedRooms.Count() / 2) && r.type == Room.roomTypes["undefined"]) {
+                r.type = Room.roomTypes["public"];
+            }
+            else
+            {
+                if(r.type == Room.roomTypes["undefined"])
+                    r.type = Room.roomTypes["private"];
+            }
+            i++;
+        }
+        //test:
+        foreach(Room r in rooms)
+        {
+            Debug.Log(r.name + " is " + Room.roomTypes.FirstOrDefault(x => x.Value == r.type).Key);
+        }
+
         StartCoroutine(MoveAllRoomsToClear());
         yield return null;
     }
@@ -151,7 +176,7 @@ public class Generator : MonoBehaviour {
             if (CollidingRooms().Length == 0)
             {
                 ready = true;
-                Debug.Log("No Collisionswhatsoever" + CollidingRooms().Length);
+                //Debug.Log("No Collisionswhatsoever" + CollidingRooms().Length);
             }
             /*else
             {
@@ -166,7 +191,7 @@ public class Generator : MonoBehaviour {
                     {
                         if (r.collides)
                         {
-                            Debug.LogError("hello " + r.name + " has no Other = " + (r.otherRoom == null).ToString());
+                            Debug.LogError("ERROR " + r.name + " has no Other = " + (r.otherRoom == null).ToString());
                             if(r.otherRoom != null) r.Push(GetDirectionAwayFrom(r.transform.position, r.otherRoom.transform.position));
                             yield return null;
                         }
@@ -176,7 +201,7 @@ public class Generator : MonoBehaviour {
         }
         generating = false;
         SetRoomsTrigger(false);
-        Debug.Log("Success!");
+        Debug.Log("All rooms clear!");
         StartCoroutine(PushRoomsToCenter());
     }
 
@@ -324,14 +349,21 @@ public class Generator : MonoBehaviour {
     private Room getBiggestRoom()
     {
         List<Room> sortedRooms = rooms.OrderBy(x => (x.size.x * x.size.z)).ToList<Room>();
-        Debug.Log("smallest : " + sortedRooms[0].name);
-        Debug.Log("biggest : " + sortedRooms[sortedRooms.Count()-1]);
-        return sortedRooms.Last();
+        //Debug.Log("smallest : " + sortedRooms[0].name);
+        //Debug.Log("biggest : " + sortedRooms[sortedRooms.Count()-1]);
+        return getRoomsSorted().Last();
     }
+
+    private List<Room> getRoomsSorted()
+    {
+        return rooms.OrderBy(x => (x.size.x * x.size.z)).ToList<Room>();
+    }
+
     private void RoomsWereChecked(bool wasChecked) {
         foreach (Room r in rooms)
         {
             r.wasChecked = wasChecked;
         }
     }
+
 }

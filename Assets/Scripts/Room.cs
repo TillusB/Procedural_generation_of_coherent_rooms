@@ -24,7 +24,7 @@ public class Room : MonoBehaviour {
 
     //Methods
     void Start () {
-        roomTypes.TryGetValue("undefined", out type);
+        SetRoomType("undefined");
         transform.parent = GameObject.Find("Rooms").transform; // Root Object um alle Collider einzublenden
         collider = gameObject.AddComponent<BoxCollider>();
         trigger = gameObject.AddComponent<BoxCollider>();
@@ -37,6 +37,11 @@ public class Room : MonoBehaviour {
         trigger.isTrigger = true;
         rb.useGravity = false;
         rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+        GameObject box = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        box.transform.localScale = size;
+        box.transform.parent = gameObject.transform;
+        box.transform.localPosition = Vector3.zero;
+        GameObject.Destroy(box.GetComponent<Collider>());
     }
 
     void Update () {
@@ -134,7 +139,7 @@ public class Room : MonoBehaviour {
     }
 
     /// <summary>
-    /// TODO: Set this Rooms type (public/private/open/???)
+    ///     Set this Rooms type public, private or undefined
     /// </summary>
     /// <param name="type">TODO: Type of this Room</param>
     public void SetRoomType(string roomtype)
@@ -150,6 +155,7 @@ public class Room : MonoBehaviour {
     public bool CollidesWith(Room r)
     {
         if (otherRoom == r) return true;
+        if (neighbours.Contains(r)) return true;
         return false;
     }
 

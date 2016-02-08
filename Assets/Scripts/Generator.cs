@@ -40,8 +40,8 @@ public class Generator : MonoBehaviour {
     }
 
     //Attributes
-    public System.Collections.Generic.List<Room> rooms = new System.Collections.Generic.List<Room>();
-    public System.Collections.Generic.List<Door> doors = new System.Collections.Generic.List<Door>();
+    public List<Room> rooms = new List<Room>();
+    public List<Door> doors = new List<Door>();
     public int amountOfRooms = 0;
     public Vector2 minMaxRoomDimensions = Vector2.zero;
     public Vector2 minMaxWidth = Vector2.zero;
@@ -143,6 +143,7 @@ public class Generator : MonoBehaviour {
         StartCoroutine(MoveAllRoomsToClear());
         yield return null;
     }
+
     /// <summary>
     /// Moves rooms apart after placement until no rooms collide anymore.
     /// </summary>
@@ -202,41 +203,43 @@ public class Generator : MonoBehaviour {
         generating = false;
         SetRoomsTrigger(false);
         Debug.Log("All rooms clear!");
-        StartCoroutine(PushRoomsToCenter());
+        ConnectPublicRooms();
+        //StartCoroutine(PushRoomsToTarget(rooms, getBiggestRoom()));
     }
 
     /// <summary>
-    /// Pushes all rooms towards the center room TBI
+    /// Pushes list of rooms to target room
     /// </summary>
+    /// <param name="pushRooms">List of rooms to move</param>
+    /// <param name="toTarget">target to move rooms to</param>
     /// <returns></returns>
-    private IEnumerator PushRoomsToCenter()
+    private IEnumerator PushRoomsToTarget(List<Room> pushRooms, Room toTarget)
     {
         pushing = true;
         while (generating)
         {
             yield return null; //skip frame until other Coroutine is done;
         }
-        Room biggest = getBiggestRoom();
-        Destroy(biggest.rb); //Biggest will not be pushed!
+        toTarget.rb.isKinematic = true; //target will not be pushed!
 
-        foreach(Room r in rooms)
+        foreach(Room r in pushRooms)
         {
-            if(r == biggest)
+            if(r == toTarget)
             {
                 continue;
             }
             float time = Time.deltaTime; //timer to stop infinite push
             while (true)
             {
-                r.Push(-GetDirectionAwayFrom(r.transform.position, biggest.transform.position));
+                r.Push(-GetDirectionAwayFrom(r.transform.position, toTarget.transform.position));
                 yield return null;
-                if (r.ConnectedTo(biggest))
+                if (r.ConnectedTo(toTarget))
                 {
                     RoomsWereChecked(false);
                     break;
                 }
                 time += Time.deltaTime;
-                if (time >= 3f)
+                if (time >= 5f)
                 {
                     break;
                 }
@@ -246,15 +249,108 @@ public class Generator : MonoBehaviour {
         //Debug.Log("Done");
 
         //TODO TEST TEST
-        foreach(Room r in rooms)
+        //foreach (Room r in rooms)
+        //{
+        //    foreach (Room n in r.neighbours)
+        //    {
+        //        AddDoor(r, n);
+        //    }
+        //}
+        //yield return null;
+        //pushing = false;
+    }
+
+    /// <summary>
+    /// Pushes all Rooms to target Vector3
+    /// </summary>
+    /// <param name="pushRooms">List of rooms to move</param>
+    /// <param name="toTarget">target point to move rooms to</param>
+    /// <returns></returns>
+    private IEnumerator PushRoomsToTarget(List<Room> pushRooms, Vector3 toTarget)
+    {
+        pushing = true;
+        while (generating)
         {
-            foreach(Room n in r.neighbours)
-            {
-                AddDoor(r, n);
-            }
+            yield return null; //skip frame until other Coroutine is done;
         }
-        yield return null;
-        pushing = false;
+
+        foreach (Room r in pushRooms)
+        {
+            if (r.collider.bounds.Contains(toTarget))
+            {
+                continue;
+            }
+            float time = Time.deltaTime; //timer to stop infinite push
+            bool contains = false;
+
+            while (true)
+            {
+                if (r.neighbours.Count() > 0)
+                {
+                    foreach (Room n in r.neighbours)
+                    {
+                        if (n.type == Room.roomTypes["public"] && n.collider.bounds.Contains(toTarget))
+                        {
+                            contains = true;
+                        }
+                    }
+                }
+                r.Push(-GetDirectionAwayFrom(r.transform.position, toTarget));
+                yield return null;
+                if (r.collider.bounds.Contains(toTarget) || contains)
+                {
+                    r.rb.isKinematic = true;
+                    break;
+                }
+                time += Time.deltaTime;
+                if (time >= 5f)
+                {
+                    break;
+                }
+            }
+            yield return null;
+        }
+    }
+
+
+    /// <summary>
+    /// Get all public rooms and move them together
+    /// </summary>
+    private void ConnectPublicRooms()
+    {
+        List<Room> publicRooms = GetRoomsByType("public");
+        
+        StartCoroutine(PushRoomsToTarget(publicRooms, GetMiddlePointBetween(publicRooms)));
+    }
+
+    /// <summary>
+    /// Returns a Vector3 in the middle between objects in the list
+    /// </summary>
+    /// <param name="objects">List of objects</param>
+    /// <returns></returns>
+    private Vector3 GetMiddlePointBetween(List<GameObject> objects)
+    {
+        Vector3 center = Vector3.zero;
+        foreach(GameObject o in objects)
+        {
+            center += o.transform.position;
+        }
+        return center / objects.Count();
+    }
+
+    /// <summary>
+    /// Returns a Vector3 in the middle between rooms in the list
+    /// </summary>
+    /// <param name="roomList">List of rooms</param>
+    /// <returns></returns>
+    private Vector3 GetMiddlePointBetween(List<Room> roomList)
+    {
+        List<GameObject> objectList = new List<GameObject>();
+        foreach(Room r in roomList)
+        {
+            objectList.Add(r.gameObject);
+        }
+        return GetMiddlePointBetween(objectList);
     }
 
     void OnCollisionEnter(Collision coll)
@@ -352,6 +448,19 @@ public class Generator : MonoBehaviour {
         //Debug.Log("smallest : " + sortedRooms[0].name);
         //Debug.Log("biggest : " + sortedRooms[sortedRooms.Count()-1]);
         return getRoomsSorted().Last();
+    }
+
+    private List<Room> GetRoomsByType(string type)
+    {
+        List<Room> results = new List<Room>();
+        foreach (Room r in rooms)
+        {
+            if(r.type == Room.roomTypes[type])
+            {
+                results.Add(r);
+            }
+        }
+        return results;
     }
 
     private List<Room> getRoomsSorted()

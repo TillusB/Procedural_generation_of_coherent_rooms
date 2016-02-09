@@ -18,15 +18,16 @@ public class Room : MonoBehaviour {
     public Rigidbody rb;
     public static Dictionary<string, int> roomTypes = new Dictionary<string, int>();
     public int type;
-    public BoxCollider collider;
+    public BoxCollider myCollider;
     public BoxCollider trigger;
     public bool wasChecked = false;
+    public bool moving = false;
 
     //Methods
     void Start () {
         SetRoomType("undefined");
         transform.parent = GameObject.Find("Rooms").transform; // Root Object um alle Collider einzublenden
-        collider = gameObject.AddComponent<BoxCollider>();
+        myCollider = gameObject.AddComponent<BoxCollider>();
         trigger = gameObject.AddComponent<BoxCollider>();
         rb = gameObject.AddComponent<Rigidbody>();
         rb.mass = 0;
@@ -37,11 +38,15 @@ public class Room : MonoBehaviour {
         trigger.isTrigger = true;
         rb.useGravity = false;
         rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
-        GameObject box = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        /*GameObject box = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        GameObject.Destroy(box.GetComponent<BoxCollider>());
         box.transform.localScale = size;
         box.transform.parent = gameObject.transform;
-        box.transform.localPosition = Vector3.zero;
-        GameObject.Destroy(box.GetComponent<Collider>());
+        box.transform.localPosition = Vector3.zero;*/
+        //MeshFilter mf = gameObject.AddComponent<MeshFilter>();
+        //MeshRenderer mr = gameObject.AddComponent<MeshRenderer>();
+        
+        
     }
 
     void Update () {
@@ -165,10 +170,10 @@ public class Room : MonoBehaviour {
         wasChecked = true;
         bool found = false;
 
-        if (neighbours.Contains(r))
+        if (neighbours.Contains(r) || this == r)
         {
             found = true;
-            Debug.LogError("Found IT!");
+            wasChecked = false;
         }
         else
         {
@@ -182,6 +187,7 @@ public class Room : MonoBehaviour {
         }
         Debug.Log(gameObject.name + " connected to " + r.name + ": " + found);
         //Debug.Break();
+        wasChecked = false;
         return found;
     }
 }

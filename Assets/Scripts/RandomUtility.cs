@@ -21,12 +21,12 @@ public class RandomUtility : MonoBehaviour {
     /// <returns>Vector3</returns>
     public Vector3 RandomVector(int minX, int maxX, int minY, int maxY)
     {
-        return new Vector3(Random.Range(minX, maxX)*4, 10, Random.Range(minY, maxY)*4);
+        return new Vector3(Random.Range(minX, maxX), 10, Random.Range(minY, maxY));
     }
 
     public Vector3 RandomVector(int min, int max)
     {
-        return new Vector3(Random.Range(min, max)*4, 10, Random.Range(min, max)*4);
+        return new Vector3(Random.Range(min, max), 10, Random.Range(min, max));
     }
 
     /// <summary>

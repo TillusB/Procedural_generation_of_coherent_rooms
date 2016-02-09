@@ -47,24 +47,29 @@ public class Generator : MonoBehaviour {
     public Vector2 minMaxWidth = Vector2.zero;
     public Vector2 minMaxHeight = Vector2.zero;
     public Plane basePlane;
-
     private bool generating = true;
-    private bool pushing = true;
+    private bool pushing = false;
     private RandomUtility randomUtility;
 
     //Methods
     void Start ()
     {
-        Room.roomTypes.Add("undefined", 0);
-        Room.roomTypes.Add("public", 1);
-        Room.roomTypes.Add("private", 2);
+        if (Room.roomTypes.Count == 0)
+        {
+            Room.roomTypes.Add("undefined", 0);
+            Room.roomTypes.Add("public", 1);
+            Room.roomTypes.Add("private", 2);
+            Room.roomTypes.Add("entrance", 3);
+        }
         randomUtility = gameObject.AddComponent<RandomUtility>();
+
         StartCoroutine(CreateRooms(amountOfRooms));
         //StartCoroutine(TestNTimes(10));
     }
 
     void Update ()
     {
+
     }
     
     void OnDrawGizmos()
@@ -92,6 +97,11 @@ public class Generator : MonoBehaviour {
         room.position = pos;
         rooms.Add(room);
         return room;
+    }
+
+    public void Restart()
+    {
+        Application.LoadLevel(0);
     }
 
     /// <summary>
@@ -122,7 +132,7 @@ public class Generator : MonoBehaviour {
         List<Room> sortedRooms = getRoomsSorted();
         int i = 0;
 
-        foreach (Room r in sortedRooms) // Larger half (floored) of all rooms should be public rooms
+        foreach (Room r in sortedRooms) // Larger half of all rooms should be public rooms
         {
             if (i > Mathf.CeilToInt(sortedRooms.Count() / 2) && r.type == Room.roomTypes["undefined"]) {
                 r.type = Room.roomTypes["public"];
@@ -158,9 +168,11 @@ public class Generator : MonoBehaviour {
             {
                 while (r.collides)
                 {
+                    r.moving = true;
                     r.Push(GetDirectionAwayFrom(r.transform.position, r.otherRoom.transform.position));
                     yield return null;
                 }
+                r.moving = false;
             }
 
             yield return null;
@@ -192,7 +204,7 @@ public class Generator : MonoBehaviour {
                     {
                         if (r.collides)
                         {
-                            Debug.LogError("ERROR " + r.name + " has no Other = " + (r.otherRoom == null).ToString());
+                            Debug.Log("ERROR " + r.name + " has no Other = " + (r.otherRoom == null).ToString());
                             if(r.otherRoom != null) r.Push(GetDirectionAwayFrom(r.transform.position, r.otherRoom.transform.position));
                             yield return null;
                         }
@@ -203,8 +215,31 @@ public class Generator : MonoBehaviour {
         generating = false;
         SetRoomsTrigger(false);
         Debug.Log("All rooms clear!");
+        yield return null;
+        while (pushing)
+        {
+            Debug.Log("NOPE!1");
+            yield return null;
+        }
+        Debug.Log("yo mach ma");
+        pushing = true;
         ConnectPublicRooms();
-        //StartCoroutine(PushRoomsToTarget(rooms, getBiggestRoom()));
+        yield return null;
+        while (pushing)
+        {
+            Debug.Log("NOPE!2");
+            yield return null;
+        }
+        Debug.Log("Mach ma weiter");
+        AttachPrivateRooms();
+        yield return null;
+        while (pushing || rooms.Any<Room>(r => r.moving))
+        {
+            Debug.Log("NOPE!3");
+            yield return null;
+        }
+        SetEntrance();
+        AddDoors();
     }
 
     /// <summary>
@@ -213,14 +248,13 @@ public class Generator : MonoBehaviour {
     /// <param name="pushRooms">List of rooms to move</param>
     /// <param name="toTarget">target to move rooms to</param>
     /// <returns></returns>
-    private IEnumerator PushRoomsToTarget(List<Room> pushRooms, Room toTarget)
+    private IEnumerator PushRoomsToTarget(List<Room> pushRooms, Room toTarget, bool connectedIsOk = false)
     {
-        pushing = true;
         while (generating)
         {
             yield return null; //skip frame until other Coroutine is done;
         }
-        toTarget.rb.isKinematic = true; //target will not be pushed!
+        pushing = true;
 
         foreach(Room r in pushRooms)
         {
@@ -231,20 +265,38 @@ public class Generator : MonoBehaviour {
             float time = Time.deltaTime; //timer to stop infinite push
             while (true)
             {
+                r.moving = true;
                 r.Push(-GetDirectionAwayFrom(r.transform.position, toTarget.transform.position));
                 yield return null;
-                if (r.ConnectedTo(toTarget))
+                if (r.neighbours.Contains(toTarget))
                 {
-                    RoomsWereChecked(false);
+                    r.rb.isKinematic = true;
+                    break;
+                }
+                if (connectedIsOk && r.ConnectedTo(toTarget))
+                {
+                    //RoomsWereChecked(false);
+                    r.rb.isKinematic = true;
                     break;
                 }
                 time += Time.deltaTime;
                 if (time >= 5f)
                 {
+                    if (!r.neighbours.Contains(toTarget)){
+                        r.transform.position = randomUtility.RandomVector(Mathf.FloorToInt(minMaxWidth.x)*2, Mathf.FloorToInt(minMaxWidth.y)*2, Mathf.FloorToInt(minMaxHeight.x)*2, Mathf.FloorToInt(minMaxHeight.y)*2);
+                        if(r.type == Room.roomTypes["private"])
+                        {
+                            AttachPrivateRooms();
+                        }
+                        //StartCoroutine(PushRoomsToTarget(pushRooms, toTarget)); // change pos and retry;
+                        //StartCoroutine(PushRoomsToTarget(new List<Room>() { r }, toTarget));
+                    }
                     break;
                 }
             }
+            r.moving = false;
             yield return null;
+            pushing = false;
         }
         //Debug.Log("Done");
 
@@ -266,8 +318,12 @@ public class Generator : MonoBehaviour {
     /// <param name="pushRooms">List of rooms to move</param>
     /// <param name="toTarget">target point to move rooms to</param>
     /// <returns></returns>
-    private IEnumerator PushRoomsToTarget(List<Room> pushRooms, Vector3 toTarget)
+    private IEnumerator PushRoomsToTarget(List<Room> pushRooms, Vector3 toTarget, bool connectedIsOk = false)
     {
+        while (generating || pushing)
+        {
+            yield return null;
+        }
         pushing = true;
         while (generating)
         {
@@ -276,7 +332,7 @@ public class Generator : MonoBehaviour {
 
         foreach (Room r in pushRooms)
         {
-            if (r.collider.bounds.Contains(toTarget))
+            if (r.myCollider.bounds.Contains(toTarget))
             {
                 continue;
             }
@@ -289,15 +345,18 @@ public class Generator : MonoBehaviour {
                 {
                     foreach (Room n in r.neighbours)
                     {
-                        if (n.type == Room.roomTypes["public"] && n.collider.bounds.Contains(toTarget))
+                        if (n.type == Room.roomTypes["public"] && n.myCollider.bounds.Contains(toTarget))
                         {
                             contains = true;
+                        }else if(n.type == Room.roomTypes["private"])
+                        {
+                            n.Push(GetDirectionAwayFrom(r.transform.position, n.transform.position) * 15);
                         }
                     }
                 }
                 r.Push(-GetDirectionAwayFrom(r.transform.position, toTarget));
                 yield return null;
-                if (r.collider.bounds.Contains(toTarget) || contains)
+                if (r.myCollider.bounds.Contains(toTarget) || contains)
                 {
                     r.rb.isKinematic = true;
                     break;
@@ -310,6 +369,7 @@ public class Generator : MonoBehaviour {
             }
             yield return null;
         }
+        pushing = false;
     }
 
 
@@ -318,9 +378,119 @@ public class Generator : MonoBehaviour {
     /// </summary>
     private void ConnectPublicRooms()
     {
-        List<Room> publicRooms = GetRoomsByType("public");
         
-        StartCoroutine(PushRoomsToTarget(publicRooms, GetMiddlePointBetween(publicRooms)));
+        List<Room> publicRooms = GetRoomsByType("public");
+        foreach(Room pRoom in GetRoomsByType("private"))
+        {
+            //pRoom.gameObject.SetActive(false);
+        }
+        Vector3 middle = GetMiddlePointBetween(publicRooms);
+        Room middleRoom = FindClosestRoom(middle, publicRooms);
+        middleRoom.rb.isKinematic = true;
+        StartCoroutine(PushRoomsToTarget(publicRooms, middleRoom, true));
+    }
+
+    private void AttachPrivateRooms()
+    {
+        pushing = true;
+        foreach(Transform t in GameObject.Find("Rooms").transform)
+        {
+            t.gameObject.SetActive(true);
+        }
+        List<Room> privateRooms = GetRoomsByType("private");
+        foreach(Room p in privateRooms)
+        {
+            Room closestPublic = FindClosestRoom(p, GetRoomsByType("public"));
+            StartCoroutine(PushRoomsToTarget(new List<Room>(){ p }, closestPublic));
+        }
+    }
+
+    private void SetEntrance()
+    {
+        RoomWithLeastNeighbours(GetRoomsByType("public")).SetRoomType("entrance");
+    }
+
+    private Room RoomWithLeastNeighbours(List<Room> fromList)
+    {
+        float minNeighbours = Mathf.Infinity;
+        Room hasLeast = null;
+        foreach (Room room in fromList)
+        {
+            if (room.neighbours.Count() < minNeighbours)
+            {
+                hasLeast = room;
+                minNeighbours = room.neighbours.Count;
+            }
+        }
+        return hasLeast;
+    }
+
+    private void AddDoors()
+    {
+        foreach(Room getsDoor in rooms)
+        {
+            if(getsDoor.type == Room.roomTypes["public"])
+            {
+                foreach(Room neighbour in getsDoor.neighbours)
+                {
+                    if(neighbour.type == Room.roomTypes["public"] || neighbour.type == Room.roomTypes["entrance"])
+                    {
+                        AddDoor(getsDoor, neighbour);
+                    }
+                }
+            }
+            else
+            {
+                if(getsDoor.type == Room.roomTypes["private"])
+                {
+                    List<Room> candidates = GetRoomsByType("public", getsDoor.neighbours);
+                    candidates.AddRange(GetRoomsByType("entrance", getsDoor.neighbours));
+                    Room neighbour = RoomWithLeastNeighbours(candidates);
+                    if (neighbour != null)
+                    {
+                        AddDoor(getsDoor, neighbour);
+                    }
+                    else
+                    {
+                        neighbour = FindClosestRoom(getsDoor, GetRoomsByType("public"));
+                        getsDoor.AddNeighbour(neighbour);
+                        AddDoor(getsDoor, neighbour);
+                    }
+                }
+            }
+        }
+    }
+
+    private Room FindClosestRoom(Room toRoom, List<Room> fromList)
+    {
+        Room closest = null;
+        float minDist = Mathf.Infinity;
+        foreach (Room someRoom in fromList)
+        {
+            float dist = Vector3.Distance(someRoom.transform.position, toRoom.transform.position);
+            if (dist < minDist && someRoom != toRoom)
+            {
+                closest = someRoom;
+                minDist = dist;
+            }
+        }
+        return closest;
+    }
+
+    private Room FindClosestRoom(Vector3 toPos, List<Room> fromList)
+    {
+        Room closest = null;
+        float minDist = Mathf.Infinity;
+        foreach(Room someRoom in fromList)
+        {
+            float dist = Vector3.Distance(someRoom.transform.position, toPos);
+            if(dist < minDist)
+            {
+                closest = someRoom;
+                minDist = dist;
+            }
+        }
+        return closest;
     }
 
     /// <summary>
@@ -398,7 +568,7 @@ public class Generator : MonoBehaviour {
         }
         else
         {
-            throw new System.Exception("ERROR: Trying to add door between non-adjacent rooms!");
+            throw new System.Exception("ERROR: Trying to add door between non-adjacent rooms!\n Tried to connect " + FromRoom.name + " to " + ToRoom.name + "!");
         }
     }
 
@@ -444,9 +614,6 @@ public class Generator : MonoBehaviour {
     /// <returns>Room</returns>
     private Room getBiggestRoom()
     {
-        List<Room> sortedRooms = rooms.OrderBy(x => (x.size.x * x.size.z)).ToList<Room>();
-        //Debug.Log("smallest : " + sortedRooms[0].name);
-        //Debug.Log("biggest : " + sortedRooms[sortedRooms.Count()-1]);
         return getRoomsSorted().Last();
     }
 
@@ -463,16 +630,29 @@ public class Generator : MonoBehaviour {
         return results;
     }
 
+    private List<Room> GetRoomsByType(string type, List<Room> fromList)
+    {
+        List<Room> results = new List<Room>();
+        foreach (Room r in fromList)
+        {
+            if (r.type == Room.roomTypes[type])
+            {
+                results.Add(r);
+            }
+        }
+        return results;
+    }
+
     private List<Room> getRoomsSorted()
     {
         return rooms.OrderBy(x => (x.size.x * x.size.z)).ToList<Room>();
     }
 
-    private void RoomsWereChecked(bool wasChecked) {
-        foreach (Room r in rooms)
-        {
-            r.wasChecked = wasChecked;
-        }
-    }
+    //private void RoomsWereChecked(bool wasChecked) {
+    //    foreach (Room r in rooms)
+    //    {
+    //        r.wasChecked = wasChecked;
+    //    }
+    //}
 
 }

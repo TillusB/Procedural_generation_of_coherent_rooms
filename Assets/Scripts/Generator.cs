@@ -63,8 +63,44 @@ public class Generator : MonoBehaviour {
         }
         randomUtility = gameObject.AddComponent<RandomUtility>();
 
-        StartCoroutine(CreateRooms(amountOfRooms));
+        StartCoroutine(Generate());
+        //StartCoroutine(CreateRooms(amountOfRooms));
         //StartCoroutine(TestNTimes(10));
+    }
+
+    private IEnumerator Generate()
+    {
+        StartCoroutine(CreateRooms(amountOfRooms));
+
+        while (pushing || generating)
+        {
+            Debug.Log("NOPE!1");
+            yield return null;
+        }
+        Debug.Log("yo mach ma");
+        pushing = true;
+        ConnectPublicRooms();
+        yield return null;
+        while (pushing || rooms.Any<Room>(r => r.moving))
+        {
+            Debug.Log("NOPE!2");
+            yield return null;
+        }
+        Debug.Log("Mach ma weiter");
+        AttachPrivateRooms();
+        yield return null;
+        while (pushing || rooms.Any<Room>(r => r.moving))
+        {
+            Debug.Log("NOPE!3");
+            yield return null;
+        }
+        SetEntrance();
+        AddDoors();
+        foreach (Room r in rooms)
+        {
+            r.rb.isKinematic = false;
+        }
+
     }
 
     void Update ()
@@ -90,8 +126,8 @@ public class Generator : MonoBehaviour {
     public Room CreateRoom(Vector3 size, Vector3 pos)
     {
         GameObject defaultRoom = new GameObject();
-        defaultRoom.AddComponent<Room>();
-        Room room = defaultRoom.GetComponent<Room>();
+        
+        Room room = defaultRoom.AddComponent<Room>();
 
         room.size = size;
         room.position = pos;
@@ -216,35 +252,8 @@ public class Generator : MonoBehaviour {
         SetRoomsTrigger(false);
         Debug.Log("All rooms clear!");
         yield return null;
-        while (pushing)
-        {
-            Debug.Log("NOPE!1");
-            yield return null;
-        }
-        Debug.Log("yo mach ma");
-        pushing = true;
-        ConnectPublicRooms();
-        yield return null;
-        while (pushing || rooms.Any<Room>(r => r.moving))
-        {
-            Debug.Log("NOPE!2");
-            yield return null;
-        }
-        Debug.Log("Mach ma weiter");
-        AttachPrivateRooms();
-        yield return null;
-        while (pushing || rooms.Any<Room>(r => r.moving))
-        {
-            Debug.Log("NOPE!3");
-            yield return null;
-        }
-        SetEntrance();
-        AddDoors();
-        foreach(Room r in rooms)
-        {
-            r.rb.isKinematic = false;
-        }
     }
+
 
     /// <summary>
     /// Pushes list of rooms to target room

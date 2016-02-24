@@ -1,20 +1,23 @@
 ﻿using UnityEngine;
-using UnityEditor;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine.UI;
 
 /// <summary>
 /// The Generator is the heart of the program.
 /// It creates rooms in empty spaces, moves them together and decides where to put doors.
+/// Manipulate parameters in the Inspector to fit the generator to your needs.
 /// </summary>
 public class Generator : MonoBehaviour {
+
     /// <summary>
     /// Doors are used to logically connect two adjacent rooms.
     /// They are basically tuples containing nothing but two rooms.
     /// </summary>
     public class Door : Object{
         private Room[] connection = new Room[2];
+
         /// <summary>
         /// Constructor for a Door.
         /// </summary>
@@ -46,10 +49,11 @@ public class Generator : MonoBehaviour {
     public Vector2 minMaxRoomDimensions = Vector2.zero;
     public Vector2 minMaxWidth = Vector2.zero;
     public Vector2 minMaxHeight = Vector2.zero;
-    public Plane basePlane;
     private bool generating = true;
     private bool pushing = false;
     private RandomUtility randomUtility;
+    public GameObject textObject;
+    private Text loadingText;
 
     //Methods
     void Start ()
@@ -62,50 +66,84 @@ public class Generator : MonoBehaviour {
             Room.roomTypes.Add("entrance", 3);
         }
         randomUtility = gameObject.AddComponent<RandomUtility>();
-
+        textObject = GameObject.Find("LoadingText");
+        loadingText = textObject.GetComponent<Text>();
+        loadingText.text = "...";
         StartCoroutine(Generate());
         //StartCoroutine(CreateRooms(amountOfRooms));
         //StartCoroutine(TestNTimes(10));
     }
 
+    void Update()
+    {
+
+    }
+
+    /// <summary>
+    /// The main method.
+    /// It calls the coroutines and makes sure, that everything is done before the next step.
+    /// </summary>
+    /// <returns></returns>
     private IEnumerator Generate()
     {
+        loadingText.text = "Creating rooms..";
         StartCoroutine(CreateRooms(amountOfRooms));
 
         while (pushing || generating)
         {
-            Debug.Log("NOPE!1");
             yield return null;
         }
-        Debug.Log("yo mach ma");
-        pushing = true;
+
+        loadingText.text = "Creating public rooms..";
         ConnectPublicRooms();
         yield return null;
+
         while (pushing || rooms.Any<Room>(r => r.moving))
         {
-            Debug.Log("NOPE!2");
             yield return null;
         }
-        Debug.Log("Mach ma weiter");
+
+        loadingText.text = "Attaching private rooms..";
         AttachPrivateRooms();
         yield return null;
+
         while (pushing || rooms.Any<Room>(r => r.moving))
         {
-            Debug.Log("NOPE!3");
             yield return null;
         }
+
+        loadingText.text = "Deciding on entrance..";
         SetEntrance();
+        loadingText.text = "Generating doors..";
         AddDoors();
+
+        loadingText.text = "Almost done..";
+
         foreach (Room r in rooms)
         {
             r.rb.isKinematic = false;
         }
-
+        loadingText.text = "Done!";
+        Make();
     }
 
-    void Update ()
+    /// <summary>
+    /// Method to add meshes etc to the Objects
+    /// Modify to customize the visualisation of rooms and doors.
+    /// </summary>
+    private void Make()
     {
+        foreach(Room r in rooms)
+        {
+            GameObject box = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            box.GetComponent<Collider>().enabled = false;
+            box.transform.localScale = r.transform.localScale;
+            box.transform.position = r.transform.position;
+            box.transform.parent = r.transform;
+            box.GetComponent<Renderer>().material = new Material(Shader.Find("Diffuse"));
+            box.GetComponent<Renderer>().material.color = Color.gray;
 
+        }
     }
     
     void OnDrawGizmos()
@@ -181,10 +219,6 @@ public class Generator : MonoBehaviour {
             i++;
         }
         //test:
-        foreach(Room r in rooms)
-        {
-            Debug.Log(r.name + " is " + Room.roomTypes.FirstOrDefault(x => x.Value == r.type).Key);
-        }
 
         StartCoroutine(MoveAllRoomsToClear());
         yield return null;
@@ -240,7 +274,6 @@ public class Generator : MonoBehaviour {
                     {
                         if (r.collides)
                         {
-                            Debug.Log("ERROR " + r.name + " has no Other = " + (r.otherRoom == null).ToString());
                             if(r.otherRoom != null) r.Push(GetDirectionAwayFrom(r.transform.position, r.otherRoom.transform.position));
                             yield return null;
                         }
@@ -250,7 +283,6 @@ public class Generator : MonoBehaviour {
         }
         generating = false;
         SetRoomsTrigger(false);
-        Debug.Log("All rooms clear!");
         yield return null;
     }
 
@@ -395,18 +427,21 @@ public class Generator : MonoBehaviour {
     {
         
         List<Room> publicRooms = GetRoomsByType("public");
-        foreach(Room pRoom in GetRoomsByType("private"))
+        if (publicRooms.Count > 1)
         {
-            pRoom.gameObject.SetActive(false);
+            foreach (Room pRoom in GetRoomsByType("private"))
+            {
+                pRoom.gameObject.SetActive(false);
+            }
+            Vector3 middle = GetMiddlePointBetween(publicRooms);
+            Room middleRoom = FindClosestRoom(middle, publicRooms);
+            middleRoom.rb.isKinematic = true;
+            foreach (Room pR in publicRooms)
+            {
+                pR.moving = true;
+            }
+            StartCoroutine(PushRoomsToTarget(publicRooms, middleRoom, true));
         }
-        Vector3 middle = GetMiddlePointBetween(publicRooms);
-        Room middleRoom = FindClosestRoom(middle, publicRooms);
-        middleRoom.rb.isKinematic = true;
-        foreach(Room pR in publicRooms)
-        {
-            pR.moving = true;
-        }
-        StartCoroutine(PushRoomsToTarget(publicRooms, middleRoom, true));
     }
 
     private void AttachPrivateRooms()
@@ -548,29 +583,6 @@ public class Generator : MonoBehaviour {
     void OnCollisionEnter(Collision coll)
     {
         //Debug.Log("Collision Enter");
-    }
-
-    /// <summary>
-    /// Creates n levels and saves them as prefabs.
-    /// </summary>
-    /// <param name="n">Amount of testruns</param>
-    IEnumerator TestNTimes(int n)
-    {
-        for(int i = 0; i < n; i++)
-        {
-            StartCoroutine(CreateRooms(amountOfRooms));
-            GameObject test = GameObject.Find("Rooms");
-            while (generating || pushing)
-            {
-                yield return null;
-            }
-            PrefabUtility.CreatePrefab("Assets/Prefabs/" + test.name + i + ".prefab", test, ReplacePrefabOptions.Default);
-            Debug.Log("Saved!");
-            foreach(Transform child in test.GetComponentInChildren<Transform>())
-            {
-                Destroy(child.gameObject);
-            }
-        }
     }
 
     /// <summary>

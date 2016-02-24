@@ -185,7 +185,6 @@ public class Room : MonoBehaviour {
                 }
             }
         }
-        Debug.Log(gameObject.name + " connected to " + r.name + ": " + found);
         //Debug.Break();
         wasChecked = false;
         return found;

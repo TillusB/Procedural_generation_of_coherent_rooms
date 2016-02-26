@@ -19,7 +19,6 @@ public class Room : MonoBehaviour {
     public static Dictionary<string, int> roomTypes = new Dictionary<string, int>();
     public int type;
     public BoxCollider myCollider;
-    //public BoxCollider trigger;
     public bool wasChecked = false;
     public bool moving = false;
 
@@ -28,24 +27,15 @@ public class Room : MonoBehaviour {
         SetRoomType("undefined");
         transform.parent = GameObject.Find("Rooms").transform; // Root Object um alle Collider einzublenden
         myCollider = gameObject.AddComponent<BoxCollider>();
-        //trigger = gameObject.AddComponent<BoxCollider>();
         rb = gameObject.AddComponent<Rigidbody>();
         rb.mass = 0;
         rb.constraints = RigidbodyConstraints.FreezePositionY | RigidbodyConstraints.FreezeRotation;
         gameObject.transform.position = position;
         gameObject.transform.localScale = size;
-        gameObject.transform.localScale.Set(gameObject.transform.localScale.x % 5, gameObject.transform.localScale.y, gameObject.transform.localScale.z % 5);
-        //trigger.isTrigger = true;
+        gameObject.transform.localScale.Set(gameObject.transform
+            .localScale.x % 5, gameObject.transform.localScale.y, gameObject.transform.localScale.z % 5);
         rb.useGravity = false;
-        rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
-        /*GameObject box = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        GameObject.Destroy(box.GetComponent<BoxCollider>());
-        box.transform.localScale = size;
-        box.transform.parent = gameObject.transform;
-        box.transform.localPosition = Vector3.zero;*/
-        //MeshFilter mf = gameObject.AddComponent<MeshFilter>();
-        //MeshRenderer mr = gameObject.AddComponent<MeshRenderer>();
-        
+        rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;        
         
     }
 

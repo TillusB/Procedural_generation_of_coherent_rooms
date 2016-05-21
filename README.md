@@ -1,6 +1,7 @@
 # Procedural generation of coherent rooms
 
-This project is intended to generate levels for videogames from preset rooms or tiles.
-The main focus is to get rid of stupidly long hallways as we traditionally see them in many dungeon generators.
-Also the levels should look like ground plans and be fit onto a preset ground plane.
-This way it should be possible to create believable indoor enviroments.
+This was the project I made in as part of my bachelor's thesis.
+
+It is a level generator made in Unity3D for indoor enviroments. In its current state it generates rooms randomly, assigns them a type (public, private, entrance) and connects them.
+
+It does not feature visuals, only a layout and logical connections.
